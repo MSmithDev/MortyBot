@@ -28,6 +28,7 @@ In the root directory create a .env file, add the following lines and replace th
 ```
 DISCORD_TOKEN=your-bot-token
 BOT_ID=@<bot-id-number>
+GUILD_ID=guild-id
 OPENAI_API_KEY=your-api-key
 ELEVENLABS_API_KEY=your-api-key
 ```
