@@ -5,7 +5,7 @@ from discord import app_commands
 
 
 MY_GUILD = discord.Object(id=os.getenv('GUILD_ID'))
-
+BotGPT_ID = os.getenv('BOT_ID')
 
 class BotGPT(discord.Client):
     def __init__(self, *, intents: discord.Intents):
@@ -28,6 +28,7 @@ class BotGPT(discord.Client):
         await self.tree.sync(guild=MY_GUILD)
 
 intents = discord.Intents.default()
+intents.message_content = True
 client = BotGPT(intents=intents)
 
 @client.event
@@ -42,5 +43,12 @@ async def ping(interaction: discord.Interaction):
 
 @client.tree.command()
 async def chat(interaction: discord.Interaction, message: str):
-    """A simple chat command"""
+    """Chat with the bot"""
     await interaction.response.send_message(interaction.user.name +' said: ' + message)
+
+@client.event
+async def on_message(message: discord.Message):
+    print(message.content)
+
+    if message.content.startswith(BotGPT_ID):
+        await message.channel.send('Hello!')

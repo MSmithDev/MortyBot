@@ -1,7 +1,5 @@
 import tiktoken
 
-def verifyEnv():
-    print("Verifying environment...")
 
 # Function to check the number of tokens in a message
 encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
