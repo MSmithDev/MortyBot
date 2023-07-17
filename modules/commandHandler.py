@@ -7,6 +7,7 @@ from discord import app_commands
 MY_GUILD = discord.Object(id=os.getenv('GUILD_ID'))
 BotGPT_ID = os.getenv('BOT_ID')
 
+
 class BotGPT(discord.Client):
     def __init__(self, *, intents: discord.Intents):
         super().__init__(intents=intents)
