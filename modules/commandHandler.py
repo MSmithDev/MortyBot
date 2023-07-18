@@ -1,11 +1,14 @@
 from typing import Optional
 import os
 import discord
+import random
 from discord import app_commands
 
 
 MY_GUILD = discord.Object(id=os.getenv('GUILD_ID'))
 BotGPT_ID = os.getenv('BOT_ID')
+
+CoreChannelID = os.getenv('CORE_CHANNEL')
 
 
 class BotGPT(discord.Client):
@@ -36,6 +39,28 @@ client = BotGPT(intents=intents)
 async def on_ready():
     print(f'Logged in as {client.user} (ID: {client.user.id})')
     print('------')
+    # get core channel
+    print("coreid: "+ CoreChannelID)
+    core_channel = await client.fetch_channel(CoreChannelID)
+
+    #choose random greeting
+
+    morty_greetings = [
+        "Uh, he-hey there, everybody!",
+        "W-whoa, h-hello, Discord world!",
+        "Um, h-hiya! Morty bot is here!",
+        "Oh geez, h-hello everyone!",
+        "H-hey, uh, what's up, Discord pals?",
+        "A-a-a-hey, nice to meet you all!",
+        "G-greetings, fellow Discord adventurers!",
+        "H-hi there, partners in chat!",
+        "Hey, um, how's it going, Discord universe?",
+        "Oh man, h-hello! Morty bot reporting for duty!"
+    ]
+
+    random_greeting = random.choice(morty_greetings)
+
+    await core_channel.send(random_greeting)
 
 @client.tree.command()
 async def ping(interaction: discord.Interaction):
