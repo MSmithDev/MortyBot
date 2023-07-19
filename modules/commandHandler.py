@@ -15,7 +15,7 @@ FoxDamageChannelID = os.getenv('FOX_DAMAGE_CHANNEL')
 
 
 
-conn = sqlite3.connect('MortyBot.db')
+SmartDamageDB = sqlite3.connect('SmartDamage.db')
 
 
 class BotGPT(discord.Client):
@@ -98,5 +98,5 @@ async def on_message(message: discord.Message):
     if message.channel.id == int(FoxDamageChannelID) and message.author.id != int(BotGPT_ID):
         print("Smart Damage Question")
         async with message.channel.typing():
-            await message.reply(getRequiredMunitions(conn, SmartDamageGPT(message.content)))
+            await message.reply(getRequiredMunitions(SmartDamageDB, SmartDamageGPT(message.content)))
             
