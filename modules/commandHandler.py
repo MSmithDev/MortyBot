@@ -3,12 +3,19 @@ import os
 import discord
 import random
 from discord import app_commands
-
+from modules.GPT import SmartDamageGPT
+from modules.SmartDamage import getRequiredMunitions
+import sqlite3
 
 MY_GUILD = discord.Object(id=os.getenv('GUILD_ID'))
 BotGPT_ID = os.getenv('BOT_ID')
 
 CoreChannelID = os.getenv('CORE_CHANNEL')
+FoxDamageChannelID = os.getenv('FOX_DAMAGE_CHANNEL')
+
+
+
+conn = sqlite3.connect('MortyBot.db')
 
 
 class BotGPT(discord.Client):
@@ -60,12 +67,18 @@ async def on_ready():
 
     random_greeting = random.choice(morty_greetings)
 
-    await core_channel.send(random_greeting)
+    #await core_channel.send(random_greeting)
 
 @client.tree.command()
 async def ping(interaction: discord.Interaction):
     """A simple ping command"""
     await interaction.response.send_message('Pong!')
+
+
+
+
+
+
 
 @client.tree.command()
 async def chat(interaction: discord.Interaction, message: str):
@@ -74,7 +87,16 @@ async def chat(interaction: discord.Interaction, message: str):
 
 @client.event
 async def on_message(message: discord.Message):
-    print(message.content)
+    print(f"[MSG] From: [{message.author.name}] ChannelID: [{message.channel.id}] Content: [{message.content}]")
 
     if message.content.startswith(BotGPT_ID):
         await message.channel.send('Hello!')
+    
+
+
+    #If message is in Smart Damage Channel process it
+    if message.channel.id == int(FoxDamageChannelID) and message.author.id != int(BotGPT_ID):
+        print("Smart Damage Question")
+        async with message.channel.typing():
+            await message.reply(getRequiredMunitions(conn, SmartDamageGPT(message.content)))
+            
