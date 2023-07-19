@@ -16,9 +16,9 @@ FoxDamageChannelID = os.getenv('FOX_DAMAGE_CHANNEL')
 
 
 SmartDamageDB = sqlite3.connect('SmartDamage.db')
+MortyBotDB = sqlite3.connect('MortyBot.db')
 
-
-class BotGPT(discord.Client):
+class MortyBot(discord.Client):
     def __init__(self, *, intents: discord.Intents):
         super().__init__(intents=intents)
         # A CommandTree is a special type that holds all the application command
@@ -40,7 +40,7 @@ class BotGPT(discord.Client):
 
 intents = discord.Intents.default()
 intents.message_content = True
-client = BotGPT(intents=intents)
+client = MortyBot(intents=intents)
 
 @client.event
 async def on_ready():
