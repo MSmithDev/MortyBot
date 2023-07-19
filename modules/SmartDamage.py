@@ -2,9 +2,9 @@ import sqlite3
 import json
 
 
-def getRequiredMunitions(sql, prompt):
+def getRequiredMunitions(sql, GPTResponse):
 
-    request = json.loads(prompt)
+    request = json.loads(GPTResponse)
     ammo = request['type']
     target = request['target']
     try:
@@ -23,7 +23,7 @@ def getRequiredMunitions(sql, prompt):
     cursor.execute(query)
     row = cursor.fetchone()
 
-    ds = "Prompt:```" + prompt + "```\n"
+    ds = "Prompt:```" + GPTResponse + "```\n"
     ds += "Query: ```" + query + "```\n"
     
     if tier > 0:
