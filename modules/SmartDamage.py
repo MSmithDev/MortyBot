@@ -3,7 +3,7 @@ import json
 
 
 def getRequiredMunitions(sql, GPTResponse):
-
+    print("[SmartDamage] GPTResponse: ["+GPTResponse+"]")
     request = json.loads(GPTResponse)
     ammo = request['type']
     target = request['target']
@@ -13,10 +13,10 @@ def getRequiredMunitions(sql, GPTResponse):
         tier = 0
 
     if tier > 0:
-        query = 'SELECT "'+ammo+'", Name FROM SmartDamage WHERE SmartDamage.target LIKE "%'+target+'%" AND SmartDamage.tier = '+str(tier) + ' COLLATE NOCASE'
+        query = 'SELECT "'+ammo+'", Name, Tier FROM SmartDamage WHERE SmartDamage.target LIKE "%'+target+',%" AND SmartDamage.tier = '+str(tier) + ' COLLATE NOCASE'
     else:
-        query = 'SELECT "'+ammo+'", Name FROM SmartDamage WHERE SmartDamage.target LIKE "%'+target+'%" COLLATE NOCASE'
-
+        query = 'SELECT "'+ammo+'", Name, Tier FROM SmartDamage WHERE SmartDamage.target LIKE "%'+target+',%" COLLATE NOCASE'
+        
    
     print("[SQL Q] "+ query)
     cursor = sql.cursor()
@@ -26,6 +26,8 @@ def getRequiredMunitions(sql, GPTResponse):
     ds = "Prompt:```" + GPTResponse + "```\n"
     ds += "Query: ```" + query + "```\n"
     
+    tier = row[2]
+
     if tier > 0:
         ds += f"Answer: ```It will take {row[0]} {ammo} to destroy a Tier {tier} {row[1]}```"
     else:
