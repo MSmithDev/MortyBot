@@ -15,7 +15,7 @@ FoxDamageChannelID = os.getenv('FOX_DAMAGE_CHANNEL')
 
 
 
-SmartDamageDB = sqlite3.connect('SmartDamage.db')
+SmartDamageDB = sqlite3.connect('SmartDamage2.db')
 MortyBotDB = sqlite3.connect('MortyBot.db')
 
 class MortyBot(discord.Client):
