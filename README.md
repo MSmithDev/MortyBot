@@ -11,6 +11,7 @@ ElevenLabs API Key (optional for realistic voice)
 Discord with voice:
 ```bash
 pip install -U discord.py[voice]
+pip install -U git+https://github.com/Rapptz/discord.py
 ```
 OpenAI:
 ```bash
