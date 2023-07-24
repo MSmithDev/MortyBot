@@ -2,35 +2,44 @@ import sqlite3
 import json
 
 
-def getRequiredMunitions(sql, GPTResponse):
-    print("[SmartDamage] GPTResponse: ["+GPTResponse+"]")
-    request = json.loads(GPTResponse)
-    ammo = request['type']
-    target = request['target']
-    try:
-        tier = request['tier']
-    except:
-        tier = 0
 
+
+#This function is called by GPT to get the number of rounds needed to destroy a target
+def get_rounds_needed(sql, target, ammo, tier=0):
+
+    #Build the query based on the parameters given
     if tier > 0:
         query = 'SELECT "'+ammo+'", Name, Tier FROM SmartDamage WHERE SmartDamage.target LIKE "%'+target+',%" AND SmartDamage.tier = '+str(tier) + ' COLLATE NOCASE'
     else:
         query = 'SELECT "'+ammo+'", Name, Tier FROM SmartDamage WHERE SmartDamage.target LIKE "%'+target+',%" COLLATE NOCASE'
         
-   
+    #Print the query for debugging
     print("[SQL Q] "+ query)
+
+    #Execute the query
     cursor = sql.cursor()
     cursor.execute(query)
+
+    #Get the results
     row = cursor.fetchone()
 
-    ds = "Prompt:```" + GPTResponse + "```\n"
-    ds += "Query: ```" + query + "```\n"
-    
+    #get tier from the query
     tier = row[2]
 
-    if tier > 0:
-        ds += f"Answer: ```It will take {row[0]} {ammo} to destroy a Tier {tier} {row[1]}```"
+    #if the tier is greater than 0, then we need to return the tier
+    if (tier > 0):
+        response = {
+                "target": row[1],
+                "ammo": ammo,
+                "Tier": tier,
+                "needed": row[0],
+            }
     else:
-        ds += f"Answer: ```It will take {row[0]} {ammo} to destroy a {row[1]}```"
+        response = {
+            "target": row[1],
+            "ammo": ammo,
+            "needed": row[0],
+        }
 
-    return ds
+    #return the response as a JSON string
+    return json.dumps(response)
