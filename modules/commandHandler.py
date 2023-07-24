@@ -4,7 +4,6 @@ import discord
 import random
 from discord import app_commands
 from modules.GPT import SmartDamageGPT
-from modules.SmartDamage import getRequiredMunitions
 import sqlite3
 
 MY_GUILD = discord.Object(id=os.getenv('GUILD_ID'))
@@ -76,9 +75,12 @@ async def ping(interaction: discord.Interaction):
 
 
 
-
-
-
+#Debug command
+@client.tree.command()
+async def debug(interaction: discord.Interaction):
+    """Debug the bot"""
+    view.add_item(discord.ui.Button(label="Button", custom_id="button"))
+    await interaction.response.send_message("Debugging!", view=view)
 
 @client.tree.command()
 async def chat(interaction: discord.Interaction, message: str):
@@ -98,5 +100,13 @@ async def on_message(message: discord.Message):
     if message.channel.id == int(FoxDamageChannelID) and message.author.id != int(BotGPT_ID):
         print("Smart Damage Question")
         async with message.channel.typing():
-            await message.reply(getRequiredMunitions(SmartDamageDB, SmartDamageGPT(message.content)))
-            
+            #await message.reply(getRequiredMunitions(SmartDamageDB, SmartDamageGPT(message.content)))
+            await message.reply(SmartDamageGPT(SmartDamageDB,message.content))
+
+
+
+class TestView(View):
+    @button(lable="Test1")
+    async def test1(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.response.send_message("Test1")
+        
