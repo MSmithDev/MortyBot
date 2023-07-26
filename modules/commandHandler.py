@@ -44,7 +44,7 @@ class MortyBot(discord.Client):
     async def setup_hook(self):
         # This copies the global commands over to your guild.
         self.tree.copy_global_to(guild=OWNER_GUILD)
-        await self.tree.sync(guild=OWNER_GUILD)
+        await self.tree.sync()
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -100,7 +100,7 @@ async def ping(interaction: discord.Interaction):
 async def setup(interaction: discord.Interaction):
     """Setup the bot"""
     view = MortyUI.SetupView(sql=utils.MortyBotDB, guild=interaction.guild)
-    await interaction.response.send_message("Choose an option to configure:", view=view)
+    await interaction.response.send_message("Choose an option to configure:", view=view,ephemeral=True)
 
 
 
