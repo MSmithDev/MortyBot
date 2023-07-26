@@ -28,12 +28,8 @@ Servers: List[ServerConfig] = []
 
 def updateServerList():
     global Servers
-    print("[MORTYBOT] PRE Updating Server List...")
-    print(Servers)
     Servers = loadServers(MortyBotDB)
-    print("[MORTYBOT] POST Updating Server List...")
-    print(Servers)
-    print("DONE!")
+
 
 
 class ChannelNames(Enum):
