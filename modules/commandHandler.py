@@ -2,20 +2,29 @@ from typing import Optional
 import os
 import discord
 import random
+import modules.utils as utils
 from discord import app_commands
 from modules.GPT import SmartDamageGPT
+import modules.MortyUI as MortyUI
 import sqlite3
+from dataclasses import dataclass
 
-MY_GUILD = discord.Object(id=os.getenv('GUILD_ID'))
+
+OWNER_GUILD = discord.Object(id=os.getenv('GUILD_ID'))
 BotGPT_ID = os.getenv('BOT_ID')
 
 CoreChannelID = os.getenv('CORE_CHANNEL')
 FoxDamageChannelID = os.getenv('FOX_DAMAGE_CHANNEL')
 
-
-
+print("[MORTYBOT] Attaching Databases...")
 SmartDamageDB = sqlite3.connect('SmartDamage2.db')
-MortyBotDB = sqlite3.connect('MortyBot.db')
+
+print("[MORTYBOT] Done!")
+
+
+
+
+
 
 class MortyBot(discord.Client):
     def __init__(self, *, intents: discord.Intents):
@@ -34,8 +43,8 @@ class MortyBot(discord.Client):
     # By doing so, we don't have to wait up to an hour until they are shown to the end-user.
     async def setup_hook(self):
         # This copies the global commands over to your guild.
-        self.tree.copy_global_to(guild=MY_GUILD)
-        await self.tree.sync(guild=MY_GUILD)
+        self.tree.copy_global_to(guild=OWNER_GUILD)
+        await self.tree.sync(guild=OWNER_GUILD)
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -43,14 +52,16 @@ client = MortyBot(intents=intents)
 
 @client.event
 async def on_ready():
-    print(f'Logged in as {client.user} (ID: {client.user.id})')
+    print(f'Logged in as {client.user} (ID: {client.user.id}) | {len(client.guilds)} servers')
+    for guild in client.guilds:
+        print(f'{guild.name} (id: {guild.id})')
     print('------')
-    # get core channel
-    print("coreid: "+ CoreChannelID)
-    core_channel = await client.fetch_channel(CoreChannelID)
 
-    #choose random greeting
+    utils.updateGuildsDB(utils.MortyBotDB, client.guilds)
+    utils.Servers = utils.loadServers(utils.MortyBotDB)
 
+
+    #Greetings
     morty_greetings = [
         "Uh, he-hey there, everybody!",
         "W-whoa, h-hello, Discord world!",
@@ -64,9 +75,15 @@ async def on_ready():
         "Oh man, h-hello! Morty bot reporting for duty!"
     ]
 
-    random_greeting = random.choice(morty_greetings)
+    #Send greetings to all configured servers
+    for server in utils.Servers:
+        if(server.ISCONFIGURED == True and server.CORE_CHANNEL != 0):
+            core_channel = await client.fetch_channel(server.CORE_CHANNEL)
+            random_greeting = random.choice(morty_greetings)
+            await core_channel.send(random_greeting)
+        else:
+            print(f"Server {server.GUILD_ID} ({server.GUILD_NAME}) is not configured!")
 
-    #await core_channel.send(random_greeting)
 
 @client.tree.command()
 async def ping(interaction: discord.Interaction):
@@ -75,12 +92,21 @@ async def ping(interaction: discord.Interaction):
 
 
 
-#Debug command
+
+
+
+#Setup command
 @client.tree.command()
-async def debug(interaction: discord.Interaction):
-    """Debug the bot"""
-    view.add_item(discord.ui.Button(label="Button", custom_id="button"))
-    await interaction.response.send_message("Debugging!", view=view)
+async def setup(interaction: discord.Interaction):
+    """Setup the bot"""
+    view = MortyUI.SetupView(sql=utils.MortyBotDB, guild=interaction.guild)
+    await interaction.response.send_message("Choose an option to configure:", view=view)
+
+
+
+
+
+
 
 @client.tree.command()
 async def chat(interaction: discord.Interaction, message: str):
@@ -104,9 +130,3 @@ async def on_message(message: discord.Message):
             await message.reply(SmartDamageGPT(SmartDamageDB,message.content))
 
 
-
-class TestView(View):
-    @button(lable="Test1")
-    async def test1(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.response.send_message("Test1")
-        
