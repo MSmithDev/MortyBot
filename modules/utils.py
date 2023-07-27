@@ -19,6 +19,7 @@ class ServerConfig:
     GUILD_NAME: str
     CORE_CHANNEL: int
     SMARTDAMAGE_CHANNEL: int
+    FOXSTORAGE_CHANNEL: int
     VOICECREATE_CHANNEL: int
     VOICESTORAGE_CHANNEL: int
     ISCONFIGURED: bool
@@ -35,6 +36,7 @@ def updateServerList():
 class ChannelNames(Enum):
     CORE_CHANNEL = "CORE_CHANNEL"
     SMARTDAMAGE_CHANNEL = "SMARTDAMAGE_CHANNEL"
+    FOXSTORAGE_CHANNEL = "FOXSTORAGE_CHANNEL"
     VOICECREATE_CHANNEL = "VOICECREATE_CHANNEL"
     VOICESTORAGE_CHANNEL = "VOICESTORAGE_CHANNEL"
     ISCONFIGURED = "ISCONFIGURED"
@@ -49,7 +51,7 @@ def updateGuildsDB(sql, guilds):
     #Create a list of servers
     servers = []
     for row in rows:
-        servers.append(ServerConfig(row[0],row[1],row[2],row[3],row[4],row[5],row[6]))
+        servers.append(ServerConfig(row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7]))
 
     #Check if the server exists in the database, if not add it
     for guild in guilds:
@@ -67,7 +69,7 @@ def updateGuildsDB(sql, guilds):
                 break
         if not guildExists:
             print(f"[Utils] Adding new server to database: {guild.name} ({guild.id})")
-            query = 'INSERT INTO Config (GUILD_ID, GUILD_NAME, CORE_CHANNEL, SMARTDAMAGE_CHANNEL, VOICECREATE_CHANNEL, VOICESTORAGE_CHANNEL, ISCONFIGURED) VALUES ('+str(guild.id)+', "'+guild.name+'", 0, 0, 0, 0, 0)'
+            query = 'INSERT INTO Config (GUILD_ID, GUILD_NAME, CORE_CHANNEL, SMARTDAMAGE_CHANNEL, FOXSTORAGE_CHANNEL, VOICECREATE_CHANNEL, VOICESTORAGE_CHANNEL, ISCONFIGURED) VALUES ('+str(guild.id)+', "'+guild.name+'", 0, 0, 0, 0, 0, 0)'
             cursor = sql.cursor()
             cursor.execute(query)
             sql.commit()
@@ -96,7 +98,7 @@ def loadServers(sql):
     #Create a list of servers
     servers = []
     for row in rows:
-        servers.append(ServerConfig(row[0],row[1],row[2],row[3],row[4],row[5],row[6]))
+        servers.append(ServerConfig(row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7]))
 
     #Return the list of servers
     return servers
@@ -109,7 +111,7 @@ def loadServer(sql, guild):
     row = cursor.fetchone()
 
     #Create a server
-    server = ServerConfig(row[0],row[1],row[2],row[3],row[4],row[5],row[6])
+    server = ServerConfig(row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7])
 
     #Return the server
     return server
@@ -143,7 +145,7 @@ def setConfigured(sql, guild):
         return False
     
 def resetConfig(sql, guild):
-    query = f'UPDATE Config SET `ISCONFIGURED` = 0, `CORE_CHANNEL` = 0, `SMARTDAMAGE_CHANNEL` = 0, `VOICECREATE_CHANNEL` = 0, `VOICESTORAGE_CHANNEL` = 0 WHERE GUILD_ID = {guild}'
+    query = f'UPDATE Config SET `ISCONFIGURED` = 0, `CORE_CHANNEL` = 0, `SMARTDAMAGE_CHANNEL` = 0, `FOXSTORAGE_CHANNEL` = 0, `VOICECREATE_CHANNEL` = 0, `VOICESTORAGE_CHANNEL` = 0 WHERE GUILD_ID = {guild}'
     print(f"[Utils] Resetting guild {guild} using query {query}")
     
     #try to execute the query return false if it fails
