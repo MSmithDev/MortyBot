@@ -5,10 +5,12 @@ import random
 import modules.utils as utils
 from discord import app_commands
 from modules.GPT import SmartDamageGPT
+from modules.SmartStockpile import getGuildStockpiles, makeStockpileEmbeds
 import modules.MortyUI as MortyUI
 import sqlite3
 from dataclasses import dataclass
 
+from prettytable import PrettyTable
 
 OWNER_GUILD = discord.Object(id=os.getenv('GUILD_ID'))
 BotGPT_ID = os.getenv('BOT_ID')
@@ -104,7 +106,27 @@ async def setup(interaction: discord.Interaction):
 
 
 
+#Stockpile Test Command
+@client.tree.command()
+async def stockpile(interaction: discord.Interaction):
+    """Stockpile Test Command"""
 
+    # embed = discord.Embed(title="Howl County                                                                                                                                                                                                                                                    ‎")
+
+    # embed.add_field(name="Where",
+    #             value=":regional_indicator_a: Slipgate\ntest\ntest2\ntest3\ntest4",
+    #             inline=True)
+    # embed.add_field(name="Code",
+    #             value="1234\n1234\n1234\n1234\n1234",
+    #             inline=True)
+    # embed.add_field(name="Expire",
+    #             value="<t:1690922460:R> ► @SomeUser\n<t:1690922460:R> ► @SomeUser\n<t:1690922460:R> ► @SomeUser\n<t:1690922460:R> ► @SomeUser\n<t:1690922460:R> ► @SomeUser",
+    #             inline=True)
+    
+    test = getGuildStockpiles(utils.MortyBotDB, interaction.guild.id)
+    test2 = await makeStockpileEmbeds(test,channel=interaction.channel)
+
+    #await interaction.response.send_message("[SmartStockpile] Check print output")
 
 
 
