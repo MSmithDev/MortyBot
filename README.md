@@ -10,8 +10,8 @@ ElevenLabs API Key (optional for realistic voice)
 ## Dependancies
 Discord with voice:
 ```bash
-pip install -U discord.py[voice]
-pip install -U git+https://github.com/Rapptz/discord.py
+pip install aiosqlite
+pip install -U py-cord[voice]
 ```
 OpenAI:
 ```bash
