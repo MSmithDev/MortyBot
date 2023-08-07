@@ -15,7 +15,7 @@ class Stockpile:
     last: str
 
 
-def getGuildStockpiles(sql, guild):
+async def getGuildStockpiles(sql, guild):
 
     #Build the query based on the parameters given
     query = f"""
@@ -26,11 +26,10 @@ def getGuildStockpiles(sql, guild):
     """
 
     #execute the query
-    cursor = sql.cursor()
-    cursor.execute(query)
+    cursor = await sql.execute(query)
 
     #Get the results
-    rows = cursor.fetchall()
+    rows = await cursor.fetchall()
 
     #List of stockpiles
     stockpiles: List[Stockpile] = []
