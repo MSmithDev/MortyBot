@@ -8,11 +8,22 @@ class SetupView(discord.ui.View):
     
     def __init__(self, sql, guild):
         super().__init__(timeout=None)
-        self.server = utils.loadServer(sql, guild.id)
+        self.server = None
         self.guild = guild
         self.sql = sql
-        self.add_buttons()
         
+    
+
+    async def initialize(self):
+        self.server = await utils.loadServer(self.sql, self.guild.id)
+        self.add_buttons()
+
+    @classmethod
+    async def create(cls, sql, guild):
+        view = cls(sql, guild)
+        await view.initialize()
+        return view
+
     def buttonState(self, state):
   
         if(state == 0):
@@ -91,6 +102,7 @@ class SetupView(discord.ui.View):
         self.add_item(resetButton)
 
     async def on_timeout(interaction: discord.Interaction):
+        print("[MortyUI] Timed Out")
         try:
             await interaction.message.edit(view=None)
         except discord.NotFound:
@@ -105,26 +117,24 @@ class UpdateChannelConfigView(discord.ui.View):
         self.sql = sql
         self.guild = guild
         self.channel = channel
-        self.add_selector()
         self.add_buttons()
-
-    def add_selector(self):
-
-        selector = discord.ui.ChannelSelect(placeholder="Select a channel", min_values=1, max_values=1,row=0)
-        selector.channel_types = [discord.ChannelType.text,discord.ChannelType.private]
         
-        
-
-        async def selectorCallback(interaction: discord.Interaction):
-            print(f"[MortyUI] Selector Choice: {selector.values[0].id} ({selector.values[0]})")
-
-            #save the channel to the database
-            res = utils.saveChannel(self.sql, self.guild.id,self.channel ,selector.values[0].id)
-            if(res):
-                view = SetupView(self.sql,self.guild)
-                await interaction.response.edit_message(content=f"Successfully updated, any other changes?",view=view)
-        selector.callback = selectorCallback
-        self.add_item(selector)
+    @discord.ui.channel_select(
+        placeholder="Select a channel",
+        min_values=1,
+        max_values=1,
+        row=0,
+        channel_types=[discord.ChannelType.text,discord.ChannelType.private]
+    )
+    async def select_callback(self, select, interaction):
+        print(f"[MortyUI] Selector Choice: {select.values[0].id} ({select.values[0]})")
+        print(f"[MortyUI] Channel: {self.channel}")
+        #save the channel to the database
+        res = await utils.saveChannel(self.sql, self.guild.id,self.channel ,select.values[0].id)
+        print(f"[MortyUI] Save Result: {res}")
+        if(res):
+            view = SetupView(self.sql,self.guild)
+            await interaction.response.edit_message(content=f"Successfully updated, any other changes?",view=view)
 
     def add_buttons(self):
         
