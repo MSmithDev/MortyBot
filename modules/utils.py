@@ -1,10 +1,10 @@
 import tiktoken
-import sqlite3
+import aiosqlite
 from dataclasses import dataclass
 from enum import Enum
 from typing import List
 
-MortyBotDB = sqlite3.connect('MortyBot.db')
+
 
 # Function to check the number of tokens in a message
 encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
@@ -27,9 +27,9 @@ class ServerConfig:
 
 Servers: List[ServerConfig] = []
 
-def updateServerList():
+async def updateServerList():
     global Servers
-    Servers = loadServers(MortyBotDB)
+    Servers = await loadServers(MortyBotDB)
 
 
 
@@ -41,12 +41,12 @@ class ChannelNames(Enum):
     VOICESTORAGE_CHANNEL = "VOICESTORAGE_CHANNEL"
     ISCONFIGURED = "ISCONFIGURED"
 
-def updateGuildsDB(sql, guilds):
+async def updateGuildsDB(sql, guilds):
     #Get the servers from the database
     query = 'SELECT * FROM Config'
-    cursor = sql.cursor()
-    cursor.execute(query)
-    rows = cursor.fetchall()
+    async with sql.cursor() as cursor:
+        await cursor.execute(query)
+        rows = await cursor.fetchall()
 
     #Create a list of servers
     servers = []
@@ -63,16 +63,16 @@ def updateGuildsDB(sql, guilds):
                 if guild.name != server.GUILD_NAME:
                     print(f"[Utils] Updating server name in database: {guild.id} ({guild.name})")
                     query = 'UPDATE Config SET GUILD_NAME = ? WHERE GUILD_ID = ?'
-                    cursor = sql.cursor()
-                    cursor.execute(query, (guild.name, guild.id))
-                    sql.commit()
+                    async with sql.cursor() as cursor:
+                        cursor.execute(query, (guild.name, guild.id))
+                    await sql.commit()
                 break
         if not guildExists:
             print(f"[Utils] Adding new server to database: {guild.name} ({guild.id})")
             query = 'INSERT INTO Config (GUILD_ID, GUILD_NAME, CORE_CHANNEL, SMARTDAMAGE_CHANNEL, FOXSTORAGE_CHANNEL, VOICECREATE_CHANNEL, VOICESTORAGE_CHANNEL, ISCONFIGURED) VALUES ('+str(guild.id)+', "'+guild.name+'", 0, 0, 0, 0, 0, 0)'
-            cursor = sql.cursor()
-            cursor.execute(query)
-            sql.commit()
+            async with sql.cursor() as cursor:
+                await cursor.execute(query)
+            await sql.commit()
 
     #TODO: Implement this when ready.
     #Check if the server has been removed from the guilds, if so remove it from the database
@@ -84,16 +84,16 @@ def updateGuildsDB(sql, guilds):
     #            break
     #    if not guildExists:
     #        query = 'DELETE FROM Config WHERE GUILD_ID = '+str(server.GUILD_ID)
-    #        cursor = sql.cursor()
-    #        cursor.execute(query)
-    #        sql.commit()
+    #        async with sql.cursor() as cursor
+    #        await cursor.execute(query)
+    #        await sql.commit()
 
-def loadServers(sql):
+async def loadServers(sql):
     #Get the servers from the database
     query = 'SELECT * FROM Config'
-    cursor = sql.cursor()
-    cursor.execute(query)
-    rows = cursor.fetchall()
+    async with sql.cursor() as cursor:
+        await cursor.execute(query)
+        rows = await cursor.fetchall()
 
     #Create a list of servers
     servers = []
@@ -103,12 +103,12 @@ def loadServers(sql):
     #Return the list of servers
     return servers
 
-def loadServer(sql, guild):
+async def loadServer(sql, guild):
     #Get the servers from the database
     query = 'SELECT * FROM Config WHERE GUILD_ID = '+str(guild)
-    cursor = sql.cursor()
-    cursor.execute(query)
-    row = cursor.fetchone()
+    async with sql.cursor() as cursor:
+        await cursor.execute(query)
+        row = await cursor.fetchone()
 
     #Create a server
     server = ServerConfig(row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7])
@@ -116,43 +116,45 @@ def loadServer(sql, guild):
     #Return the server
     return server
 
-def saveChannel(sql, guild, channelname, id):
+async def saveChannel(sql, guild, channelname, id):
     query = f'UPDATE Config SET `{channelname}` = {id} WHERE GUILD_ID = {guild}'
     print(f"[Utils] Saving channel {channelname} ({id}) for guild {guild} using query {query}")
-    cursor = sql.cursor()
+    async with sql.cursor() as cursor:
 
-    #try to execute the query return false if it fails
-    try:
-        cursor.execute(query)
-        sql.commit()
+        #try to execute the query return false if it fails
+        try:
+            await cursor.execute(query)
+            await sql.commit()
 
-        return True
-    except:
-        return False
+            return True
+        except Exception as error:
+            #print exception
+            print(f"[Utils] Error saving channel: {error}")
+            return False
     
-def setConfigured(sql, guild):
+async def setConfigured(sql, guild):
     query = f'UPDATE Config SET `ISCONFIGURED` = 1 WHERE GUILD_ID = {guild}'
     print(f"[Utils] Setting guild {guild} as configured using query {query}")
-    cursor = sql.cursor()
+    async with sql.cursor() as cursor:
 
-    #try to execute the query return false if it fails
-    try:
-        cursor.execute(query)
-        sql.commit()
+        #try to execute the query return false if it fails
+        try:
+            await cursor.execute(query)
+            await sql.commit()
 
-        return True
-    except:
-        return False
+            return True
+        except:
+            return False
     
-def resetConfig(sql, guild):
+async def resetConfig(sql, guild):
     query = f'UPDATE Config SET `ISCONFIGURED` = 0, `CORE_CHANNEL` = 0, `SMARTDAMAGE_CHANNEL` = 0, `FOXSTORAGE_CHANNEL` = 0, `VOICECREATE_CHANNEL` = 0, `VOICESTORAGE_CHANNEL` = 0 WHERE GUILD_ID = {guild}'
     print(f"[Utils] Resetting guild {guild} using query {query}")
     
     #try to execute the query return false if it fails
     try:
-        cursor = sql.cursor()
-        cursor.execute(query)
-        sql.commit()
+        async with sql.cursor() as cursor:
+            await cursor.execute(query)
+        await sql.commit()
 
         return True
     except:
