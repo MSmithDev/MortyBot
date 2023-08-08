@@ -2,7 +2,6 @@ import discord
 from dataclasses import dataclass
 from typing import List
 from collections import defaultdict
-
 @dataclass
 class Stockpile:
     guild: int
@@ -61,25 +60,5 @@ async def makeStockpileEmbeds(stockpile: List[Stockpile], channel):
         await channel.send(embed=embed)
     return "todo"
 
-#Stockpile edit buttons
-class StockpileEditButtons(discord.ui.View):
 
-    def __init__(self, sql, guild,channel):
-        super().__init__(timeout=None)
-        self.sql = sql
-        self.guild = guild
-        self.channel = channel
-        self.add_buttons()
-
-    def add_buttons(self):
-        
-        cancel = discord.ui.Button(label='Cancel', style=discord.ButtonStyle.red, row=1)
-
-        async def cancelCallback(interaction: discord.Interaction):
-            print("Cancel Button Clicked")
-            view = SetupView(self.sql,self.guild)
-            await interaction.response.edit_message(content="Choose an option to configure:",view=view)
-    
-        cancel.callback = cancelCallback
-        self.add_item(cancel)
     
