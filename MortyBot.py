@@ -97,13 +97,19 @@ async def setup(interaction: discord.Interaction):
 
 
 
+
 @MortyBot.slash_command(name="teststockpile", description="Test Stockpile")
 async def stockpile(interaction: discord.Interaction):
     """Stockpile Test Command"""
     
+    #remove old bot messages
+    print("[MortyBot] Purging old stockpile messages...]")
+    await interaction.channel.purge(limit=100, check=lambda m: m.author == MortyBot.user)
+
+
     if interaction.guild is not None:
         test = await getGuildStockpiles(MortyBotDB, interaction.guild.id)
-        test2 = await makeStockpileEmbeds(test,channel=interaction.channel)
+        test2 = await makeStockpileEmbeds(test,interaction=interaction)
 
     else:
         raise ValueError('Interaction Guild is None')
