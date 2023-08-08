@@ -28,9 +28,9 @@ class ServerConfig:
 
 Servers: List[ServerConfig] = []
 
-async def updateServerList():
+async def updateServerList(sql: aiosqlite.Connection):
     global Servers
-    Servers = await loadServers(MortyBotDB)
+    Servers = await loadServers(sql)
 
 
 
@@ -164,3 +164,10 @@ async def resetConfig(sql: aiosqlite.Connection, guild: int) -> bool:
         return True
     except:
         return False
+
+#Pad the embed title to 256 characters to force max width
+def padEmbed(title: str) -> str:
+    return title.ljust(60, 'ㅤ')
+
+def discordTimestamp(timestamp: int) -> str:
+    return f"<t:{timestamp}:R>"
