@@ -17,26 +17,40 @@ discord_token = os.getenv('DISCORD_TOKEN')
 # check if the .env has elevenlabs api key
 if os.getenv('ELEVENLABS_API_KEY'):
     ElevenLabsKey = os.getenv('ELEVENLABS_API_KEY')
-    Voice.VoiceSetup(ElevenLabsKey)
+    if ElevenLabsKey is not None:
+        Voice.VoiceSetup(ElevenLabsKey)
+    else:
+        raise ValueError('ELEVENLABS_API_KEY is not set in .env')
+    
+OWNER_GUILD_ID = os.getenv('GUILD_ID')
+if OWNER_GUILD_ID is not None:
+    OWNER_GUILD = discord.Object(id=OWNER_GUILD_ID)
+else:
+    raise ValueError('OWNER_GUILD is not set in .env')
 
-OWNER_GUILD = discord.Object(id=os.getenv('GUILD_ID'))
-BotGPT_ID = os.getenv('BOT_ID')
 
-CoreChannelID = os.getenv('CORE_CHANNEL')
-FoxDamageChannelID = os.getenv('FOX_DAMAGE_CHANNEL')
+BotGPT_ID = os.getenv('BOT_ID', '0')
+if BotGPT_ID is '0':
+    raise ValueError('BOT_ID is not set in .env')
 
+CoreChannelID = os.getenv('CORE_CHANNEL', '0')
+FoxDamageChannelID = os.getenv('FOX_DAMAGE_CHANNEL', '0')
+
+SmartDamageDB = None
+MortyBotDB = None
 
 MortyBot = commands.Bot(
     command_prefix=commands.when_mentioned_or("!"),
     intents=discord.Intents.all()
 )
 
+
 @MortyBot.event
 async def on_ready():
     print("[MORTYBOT] Attaching Databases...")
     global SmartDamageDB
     global MortyBotDB
-    SmartDamageDB = await aiosqlite.connect('SmartDamage2.db')
+    SmartDamageDB = await aiosqlite.connect('SmartDamage.db')
     MortyBotDB = await aiosqlite.connect('MortyBot.db')
     print("[MORTYBOT] Done!")
 
@@ -87,8 +101,13 @@ async def setup(interaction: discord.Interaction):
 async def stockpile(interaction: discord.Interaction):
     """Stockpile Test Command"""
     
-    test = getGuildStockpiles(MortyBotDB, interaction.guild.id)
-    test2 = await makeStockpileEmbeds(test,channel=interaction.channel)
+    if interaction.guild is not None:
+        test = await getGuildStockpiles(MortyBotDB, interaction.guild.id)
+        test2 = await makeStockpileEmbeds(test,channel=interaction.channel)
+
+    else:
+        raise ValueError('Interaction Guild is None')
+
 
     #await interaction.response.send_message("[SmartStockpile] Check print output")
 
