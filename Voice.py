@@ -1,6 +1,8 @@
-from elevenlabslib import *
+from elevenlabslib import ElevenLabsUser
 from elevenlabslib.helpers import *
 
+e11Voice = None
+e11Voices = None
 
 def VoiceSetup(key: str) -> bool:
     global e11Voice, e11Voices
@@ -17,8 +19,15 @@ def VoiceSetup(key: str) -> bool:
 
 def VoiceChange(voice: str) -> bool:
     global e11Voice
-    e11Voice = e11Voices[voice]
-    return True
+    if e11Voices is None:
+        return False
+    else:
+        e11Voice = e11Voices[voice]
+        return True
 
 def VoiceList() -> list:
-    return list(e11Voices.keys())
+    global e11Voices
+    if e11Voices is None:
+        return []
+    else:
+        return list(e11Voices.keys())
