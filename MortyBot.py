@@ -30,7 +30,7 @@ else:
 
 
 BotGPT_ID = os.getenv('BOT_ID', '0')
-if BotGPT_ID is '0':
+if BotGPT_ID == '0':
     raise ValueError('BOT_ID is not set in .env')
 
 CoreChannelID = os.getenv('CORE_CHANNEL', '0')
@@ -126,8 +126,7 @@ async def on_message(message: discord.Message):
     if message.channel.id == int(FoxDamageChannelID) and message.author.id != int(BotGPT_ID):
         print("Smart Damage Question")
         async with message.channel.typing():
-            #await message.reply(getRequiredMunitions(SmartDamageDB, SmartDamageGPT(message.content)))
-            await message.reply(SmartDamageGPT(SmartDamageDB,message.content))
+            await message.reply(await SmartDamageGPT(SmartDamageDB,message.content))
 
 
 MortyBot.run(discord_token)
