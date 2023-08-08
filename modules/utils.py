@@ -1,5 +1,6 @@
 import tiktoken
 import aiosqlite
+import discord
 from dataclasses import dataclass
 from enum import Enum
 from typing import List
@@ -41,7 +42,7 @@ class ChannelNames(Enum):
     VOICESTORAGE_CHANNEL = "VOICESTORAGE_CHANNEL"
     ISCONFIGURED = "ISCONFIGURED"
 
-async def updateGuildsDB(sql, guilds):
+async def updateGuildsDB(sql: aiosqlite.Connection, guilds: List[discord.Guild]) -> bool:
     #Get the servers from the database
     query = 'SELECT * FROM Config'
     async with sql.cursor() as cursor:
@@ -64,7 +65,7 @@ async def updateGuildsDB(sql, guilds):
                     print(f"[Utils] Updating server name in database: {guild.id} ({guild.name})")
                     query = 'UPDATE Config SET GUILD_NAME = ? WHERE GUILD_ID = ?'
                     async with sql.cursor() as cursor:
-                        cursor.execute(query, (guild.name, guild.id))
+                        await cursor.execute(query, (guild.name, guild.id))
                     await sql.commit()
                 break
         if not guildExists:
@@ -73,6 +74,8 @@ async def updateGuildsDB(sql, guilds):
             async with sql.cursor() as cursor:
                 await cursor.execute(query)
             await sql.commit()
+
+    return True
 
     #TODO: Implement this when ready.
     #Check if the server has been removed from the guilds, if so remove it from the database
@@ -88,7 +91,7 @@ async def updateGuildsDB(sql, guilds):
     #        await cursor.execute(query)
     #        await sql.commit()
 
-async def loadServers(sql):
+async def loadServers(sql: aiosqlite.Connection) -> List[ServerConfig]:
     #Get the servers from the database
     query = 'SELECT * FROM Config'
     async with sql.cursor() as cursor:
@@ -103,20 +106,22 @@ async def loadServers(sql):
     #Return the list of servers
     return servers
 
-async def loadServer(sql, guild):
+async def loadServer(sql: aiosqlite.Connection, guild: int) -> ServerConfig:
     #Get the servers from the database
     query = 'SELECT * FROM Config WHERE GUILD_ID = '+str(guild)
     async with sql.cursor() as cursor:
         await cursor.execute(query)
         row = await cursor.fetchone()
 
-    #Create a server
-    server = ServerConfig(row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7])
+    #Create a server if it exists
+    if row is not None:
+        server = ServerConfig(row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7])
+        return server
+    else:
+        raise ValueError("Server not found in database")
+    
 
-    #Return the server
-    return server
-
-async def saveChannel(sql, guild, channelname, id):
+async def saveChannel(sql: aiosqlite.Connection, guild: int, channelname: str, id: int) -> bool:
     query = f'UPDATE Config SET `{channelname}` = {id} WHERE GUILD_ID = {guild}'
     print(f"[Utils] Saving channel {channelname} ({id}) for guild {guild} using query {query}")
     async with sql.cursor() as cursor:
@@ -132,7 +137,7 @@ async def saveChannel(sql, guild, channelname, id):
             print(f"[Utils] Error saving channel: {error}")
             return False
     
-async def setConfigured(sql, guild):
+async def setConfigured(sql: aiosqlite.Connection, guild: int) -> bool:
     query = f'UPDATE Config SET `ISCONFIGURED` = 1 WHERE GUILD_ID = {guild}'
     print(f"[Utils] Setting guild {guild} as configured using query {query}")
     async with sql.cursor() as cursor:
@@ -146,7 +151,7 @@ async def setConfigured(sql, guild):
         except:
             return False
     
-async def resetConfig(sql, guild):
+async def resetConfig(sql: aiosqlite.Connection, guild: int) -> bool:
     query = f'UPDATE Config SET `ISCONFIGURED` = 0, `CORE_CHANNEL` = 0, `SMARTDAMAGE_CHANNEL` = 0, `FOXSTORAGE_CHANNEL` = 0, `VOICECREATE_CHANNEL` = 0, `VOICESTORAGE_CHANNEL` = 0 WHERE GUILD_ID = {guild}'
     print(f"[Utils] Resetting guild {guild} using query {query}")
     
