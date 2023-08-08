@@ -1,4 +1,5 @@
 import json
+import aiosqlite
 import openai
 import os
 import re
@@ -9,7 +10,7 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 
 SmartDamagaMsgs = [{"role": "system", "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous. Names of targets and weapons are from the game Foxhole. Tiers can be represented as Tier 1,2,3 or t1,t2,t3. Remove spaces from target names and do not include the tier. Ammo types: [12.7mm,Mammon,Tremola,30mm,RPG,40mm,75mm,FireRocket,Mortar,HERocket,120mm,150mm,300mm,Ignifist,APRPG,68mm,ARCRPG,94.5mm,Satchel,Hydra,250mm,Havoc] an example would be 'How many 150mm to kill a t3 relic base' 150mm is the ammo, t3 is tier 3, and relic base is the target."}]
 
-def SmartDamageGPT(sql,question):
+async def SmartDamageGPT(sql: aiosqlite.Connection, question: str):
 
     print(f"[GPT] querySmartDamage: {question}")
     SmartDamagaMsgs.append({"role": "user", "content": question})
@@ -61,7 +62,7 @@ def SmartDamageGPT(sql,question):
         function_name = response_message["function_call"]["name"]
         fuction_to_call = available_functions[function_name]
         function_args = json.loads(response_message["function_call"]["arguments"])
-        function_response = fuction_to_call(
+        function_response = await fuction_to_call(
             sql=sql,
             target=function_args.get("target"),
             ammo=function_args.get("ammo"),
