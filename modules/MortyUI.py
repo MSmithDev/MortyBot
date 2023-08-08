@@ -73,14 +73,14 @@ class SetupView(discord.ui.View):
         #Reset and Done Buttons
         async def resetCallback(interaction: discord.Interaction):
             print("[MortyUI] Reset Button Clicked")
-            utils.resetConfig(self.sql, self.guild.id)
+            await utils.resetConfig(self.sql, self.guild.id)
             view = SetupView(self.sql,self.guild)
             await interaction.response.edit_message(content="Reset!",view=view)
 
         async def doneCallback(interaction: discord.Interaction):
             print("[MortyUI] Done Button Clicked")
-            utils.setConfigured(self.sql, self.guild.id)
-            utils.updateServerList()
+            await utils.setConfigured(self.sql, self.guild.id)
+            await utils.updateServerList()
             await interaction.response.edit_message(content="Done!",view=None)
 
         core.callback = coreCallback
@@ -101,11 +101,11 @@ class SetupView(discord.ui.View):
         self.add_item(doneButton)
         self.add_item(resetButton)
 
-    async def on_timeout(interaction: discord.Interaction):
+    async def on_timeout(self):
         print("[MortyUI] Timed Out")
         try:
-            await interaction.message.edit(view=None)
-        except discord.NotFound:
+            await self.message.edit(view=None)
+        except Exception as e:
             pass
             
 
@@ -148,3 +148,25 @@ class UpdateChannelConfigView(discord.ui.View):
         cancel.callback = cancelCallback
         self.add_item(cancel)
     
+
+    #Stockpile edit buttons
+class StockpileEditButtons(discord.ui.View):
+
+    def __init__(self, sql, guild,channel):
+        super().__init__(timeout=None)
+        self.sql = sql
+        self.guild = guild
+        self.channel = channel
+        self.add_buttons()
+
+    def add_buttons(self):
+        
+        cancel = discord.ui.Button(label='Cancel', style=discord.ButtonStyle.red, row=1)
+
+        async def cancelCallback(interaction: discord.Interaction):
+            print("Cancel Button Clicked")
+            view = SetupView(self.sql,self.guild)
+            await interaction.response.edit_message(content="Choose an option to configure:",view=view)
+    
+        cancel.callback = cancelCallback
+        self.add_item(cancel)
