@@ -169,5 +169,21 @@ async def resetConfig(sql: aiosqlite.Connection, guild: int) -> bool:
 def padEmbed(title: str) -> str:
     return title.ljust(60, 'ㅤ')
 
+#create relative discord timestamp
 def discordTimestamp(timestamp: int) -> str:
     return f"<t:{timestamp}:R>"
+
+
+#Misc audio
+
+class Sinks(Enum):
+    mp3 = discord.sinks.MP3Sink()
+    wav = discord.sinks.WaveSink()
+    pcm = discord.sinks.PCMSink()
+    ogg = discord.sinks.OGGSink()
+    mka = discord.sinks.MKASink()
+    mkv = discord.sinks.MKVSink()
+    mp4 = discord.sinks.MP4Sink()
+    m4a = discord.sinks.M4ASink()
+
+    
