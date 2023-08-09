@@ -11,6 +11,12 @@ import aiosqlite
 from dataclasses import dataclass
 import asyncio
 import Voice
+from modules.Logger import setup_logger
+import logging
+
+#setup logging
+logger = setup_logger("mortybot", logging.DEBUG)
+logger.info("[MortyBot] Logger setup complete")
 
 discord_token = os.getenv('DISCORD_TOKEN')
 
@@ -47,18 +53,32 @@ MortyBot = commands.Bot(
 
 @MortyBot.event
 async def on_ready():
-    print("[MORTYBOT] Attaching Databases...")
+    logger.info("[MortyBot] Attaching Databases...")
     global SmartDamageDB
     global MortyBotDB
+
+    #Attach databases
     SmartDamageDB = await aiosqlite.connect('SmartDamage.db')
     MortyBotDB = await aiosqlite.connect('MortyBot.db')
-    print("[MORTYBOT] Done!")
+    
+    #Log database connections
+    if SmartDamageDB is not None: logger.info("[MortyBot] SmartDamageDB attached") 
+    else: logger.error("[MortyBot] SmartDamageDB failed to attach")
 
-    print(f'Logged in as {MortyBot.user} (ID: {MortyBot.user.id}) | {len(MortyBot.guilds)} servers')
+    if MortyBotDB is not None: logger.info("[MortyBot] MortyBotDB attached")
+    else: logger.error("[MortyBot] MortyBotDB failed to attach")
+
+    logger.info("[MortyBot] Databases attached")
+    logger.info("[MortyBot] ----------------------")
+
+    #Log Server Connections
+    logger.info(f'[MortyBot] Logged in as {MortyBot.user} (ID: {MortyBot.user.id}) | {len(MortyBot.guilds)} servers')
+
     for guild in MortyBot.guilds:
-        print(f'{guild.name} (id: {guild.id})')
-    print('------')
-
+        logger.info(f'[MortyBot] {guild.name} (id: {guild.id})')
+    logger.info("[MortyBot] ----------------------")
+    
+    logger.debug("[MortyBot] Updating Guilds DB...")
     await utils.updateGuildsDB(MortyBotDB, MortyBot.guilds)
     utils.Servers = await utils.loadServers(MortyBotDB)
 
@@ -82,9 +102,11 @@ async def on_ready():
         if(server.ISCONFIGURED == True and server.CORE_CHANNEL != 0):
             core_channel = await MortyBot.fetch_channel(server.CORE_CHANNEL)
             random_greeting = random.choice(morty_greetings)
+            logger.debug(f"[MortyBot] Sending greeting to {server.GUILD_NAME} ({server.GUILD_ID})")
             await core_channel.send(random_greeting)
         else:
-            print(f"Server {server.GUILD_ID} ({server.GUILD_NAME}) is not configured!")
+            logger.warning(f"[MortyBot] Server {server.GUILD_ID} ({server.GUILD_NAME}) is not configured!")
+            
 
 
 
@@ -95,7 +117,13 @@ async def setup(interaction: discord.Interaction):
     view = await MortyUI.SetupView.create(sql=MortyBotDB, guild=interaction.guild)
     await interaction.response.send_message("Choose an option to configure:", view=view,ephemeral=True)
 
+#VoiceControl
+@MortyBot.slash_command(name="voice_cmd", description="Voice Control")
+async def voice_cmd(interaction: discord.Interaction):
+    """Voice Control"""
 
+    view = MortyUI.VoiceResponseUI(guild=interaction.guild, channel=interaction.channel)
+    await interaction.response.send_message("Voice Controls", view=view,ephemeral=True)
 
 
 @MortyBot.slash_command(name="teststockpile", description="Test Stockpile")
@@ -103,7 +131,7 @@ async def stockpile(interaction: discord.Interaction):
     """Stockpile Test Command"""
     
     #remove old bot messages
-    print("[MortyBot] Purging old stockpile messages...]")
+    logger.debug("[MortyBot] Purging old stockpile messages...")
     await interaction.channel.purge(limit=100, check=lambda m: m.author == MortyBot.user)
 
 
@@ -115,13 +143,10 @@ async def stockpile(interaction: discord.Interaction):
         raise ValueError('Interaction Guild is None')
 
 
-    #await interaction.response.send_message("[SmartStockpile] Check print output")
-
-
-
 @MortyBot.event
 async def on_message(message: discord.Message):
     print(f"[MSG] From: [{message.author.name}] ChannelID: [{message.channel.id}] Content: [{message.content}]")
+    
 
     if message.content.startswith(BotGPT_ID):
         await message.channel.send('Hello!')
@@ -130,7 +155,7 @@ async def on_message(message: discord.Message):
 
     #If message is in Smart Damage Channel process it
     if message.channel.id == int(FoxDamageChannelID) and message.author.id != int(BotGPT_ID):
-        print("Smart Damage Question")
+        logger.debug("[MortyBot] Processing Smart Damage Message...")
         async with message.channel.typing():
             await message.reply(await SmartDamageGPT(SmartDamageDB,message.content))
 
