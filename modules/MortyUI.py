@@ -1,8 +1,9 @@
 import discord
 import modules.utils as utils
 from discord.ext import commands
+import logging
 
-
+logger = logging.getLogger("mortybot")
 #Configuration View
 class SetupView(discord.ui.View):
     
@@ -170,3 +171,119 @@ class StockpileEditButtons(discord.ui.View):
     
         cancel.callback = cancelCallback
         self.add_item(cancel)
+
+
+
+#Voice interaction view
+class VoiceResponseUI(discord.ui.View):
+
+    def __init__(self, guild, channel):
+        super().__init__(timeout=None)
+        self.guild = guild
+        self.recordState = False
+        self.voiceClient: discord.VoiceClient = None
+        self.connections = {}
+        self.add_buttons()
+    
+    def add_buttons(self):
+
+        join = discord.ui.Button(label='Join', style=discord.ButtonStyle.green, row=0)
+        leave = discord.ui.Button(label='Leave', style=discord.ButtonStyle.red, row=0)
+
+        start = discord.ui.Button(label='Start', style=discord.ButtonStyle.green, row=1, emoji="⏺")
+        stop = discord.ui.Button(label='Stop', style=discord.ButtonStyle.red, row=1, emoji="⏹")
+
+        #Join Button
+        async def join_callback(interaction: discord.Interaction):
+            logger.debug(f"[MortyUI] [VoiceResponse] Join Button Clicked")
+            logger.debug(f"[MortyUI] [VoiceResponse] User: {interaction.user}")
+            logger.debug(f"[MortyUI] [VoiceResponse] voice: {interaction.user.voice}")
+
+            if interaction.user.voice is None:
+                logger.warn(f"[MortyUI] [VoiceResponse] User is not in a voice channel")
+                await interaction.response.edit_message(content="You are not in a voice channel!")
+
+            else:
+                logger.debug(f"[MortyUI] [VoiceResponse] Attempting to join {interaction.user.voice.channel}")
+                await interaction.response.edit_message(content="Joining!")
+                if interaction.guild.voice_client is not None:
+                    logger.debug(f"[MortyUI] [VoiceResponse] Already in a voice channel, disconnecting")
+                    await interaction.guild.voice_client.disconnect()
+                self.voiceClient = await interaction.user.voice.channel.connect()
+
+        #Leave Button
+        async def leave_callback(interaction: discord.Interaction):
+            logger.debug(f"[MortyUI] [VoiceResponse] Leave Button Clicked")
+
+            if interaction.guild.voice_client is None:
+                logger.warn(f"[MortyUI] [VoiceResponse] MortyBot is not in a voice channel")
+                await interaction.response.edit_message(content="MortyBot is not in a voice channel!")
+
+            else:
+                logger.debug(f"[MortyUI] [VoiceResponse] Attempting to leave {interaction.guild.voice_client.channel}")
+                await interaction.response.edit_message(content="Leaving!")
+                if interaction.guild.voice_client is not None:
+                    logger.debug(f"[MortyUI] [VoiceResponse] Already in a voice channel, disconnecting")
+                    await interaction.guild.voice_client.disconnect()
+                self.voiceClient = None
+
+        async def finished_callback(sink, channel: discord.TextChannel, *args):
+            recorded_users = [f"<@{user_id}>" for user_id, audio in sink.audio_data.items()]
+            files = None
+            files = [
+                discord.File(audio.file, f"{user_id}.{sink.encoding}")
+                for user_id, audio in sink.audio_data.items()
+            ]
+            print("RECORDED USERS")
+            print(recorded_users)
+            print("FILES")
+            print(files)
+
+            if len(files) == 0:
+                await channel.send("No users recorded!")
+            else:
+                await channel.send(
+                    f"Recorded {len(recorded_users)} users: {', '.join(recorded_users)}", files=files
+                )
+            
+
+        #Start Button
+        async def start_callback(interaction: discord.Interaction):
+            logger.debug((f"[MortyUI] [VoiceResponse] Start Button Clicked"))
+            self.recordState = True
+            await interaction.response.edit_message(content="Started! Recording...")
+
+            voiceTarget = interaction.user
+            logger.debug(f"[MortyUI] [VoiceResponse] voiceTarget: {voiceTarget.name}")
+
+            self.connections.update({interaction.guild.id: self.voiceClient})
+            mysink = None
+            mysink = discord.sinks.mp3.MP3Sink()
+
+            self.voiceClient.start_recording(
+                mysink,
+                finished_callback,
+                self.voiceClient.channel
+            )
+
+        #Stop Button
+        async def stop_callback(interaction: discord.Interaction):
+            logger.debug((f"[MortyUI] [VoiceResponse] Stop Button Clicked"))
+            self.recordState = False
+            await interaction.response.edit_message(content="Stopped! Processing audio...")
+
+            if self.voiceClient.recording:
+                self.voiceClient.stop_recording()
+                
+
+        #Register callbacks
+        join.callback = join_callback
+        leave.callback = leave_callback
+        start.callback = start_callback
+        stop.callback = stop_callback
+
+        #add items to view
+        self.add_item(join)
+        self.add_item(leave)
+        self.add_item(start)
+        self.add_item(stop)
