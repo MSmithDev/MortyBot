@@ -239,12 +239,24 @@ class VoiceResponseUI(discord.ui.View):
             print("FILES")
             print(files)
 
+            
+
+
             if len(files) == 0:
                 await channel.send("No users recorded!")
             else:
+
+                #Save the files to the tempvoice folder
+                for user_id, audio in sink.audio_data.items():
+                    with open(f"./tempvoice/{user_id}.wav", "wb") as f:
+                        f.write(audio.file.getbuffer())
+
+                #Send the files to the channel
                 await channel.send(
                     f"Recorded {len(recorded_users)} users: {', '.join(recorded_users)}", files=files
                 )
+
+            
             
 
         #Start Button
@@ -257,13 +269,12 @@ class VoiceResponseUI(discord.ui.View):
             logger.debug(f"[MortyUI] [VoiceResponse] voiceTarget: {voiceTarget.name}")
 
             self.connections.update({interaction.guild.id: self.voiceClient})
-            mysink = None
             mysink = discord.sinks.mp3.MP3Sink()
 
             self.voiceClient.start_recording(
                 mysink,
                 finished_callback,
-                self.voiceClient.channel
+                interaction.channel
             )
 
         #Stop Button
