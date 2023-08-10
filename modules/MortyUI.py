@@ -248,7 +248,7 @@ class VoiceResponseUI(discord.ui.View):
 
                 #Save the files to the tempvoice folder
                 for user_id, audio in sink.audio_data.items():
-                    with open(f"./tempvoice/{user_id}.wav", "wb") as f:
+                    with open(f"./tempvoice/{user_id}.mp3", "wb") as f:
                         f.write(audio.file.getbuffer())
 
                 #Send the files to the channel
