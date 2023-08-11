@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 import random
 import modules.utils as utils
-from modules.GPT import SmartDamageGPT
+from modules.OpenAI import SmartDamageGPT
 from modules.SmartStockpile import getGuildStockpiles, makeStockpileEmbeds
 import modules.MortyUI as MortyUI
 import aiosqlite 
