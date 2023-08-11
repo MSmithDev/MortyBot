@@ -10,6 +10,9 @@ import discord
 from elevenlabslib import *
 from elevenlabslib.helpers import *
 import requests
+import asyncio
+import time
+import modules.GPTFunctions as GPTFunctions
 
 #setup logging
 logger = logging.getLogger("mortybot")
@@ -62,7 +65,8 @@ async def SmartDamageGPT(sql: aiosqlite.Connection, question: str):
 
 
     print("[GPT] Response: ",response_message)
-# Step 2: check if GPT wanted to call a function
+
+    # Step 2: check if GPT wanted to call a function
     if response_message.get("function_call"):
         # Step 3: call the function
         # Note: the JSON response may not always be valid; be sure to handle errors
@@ -120,12 +124,92 @@ async def whisperProcess(file: str) -> str:
 
 e11key = os.getenv('ELEVENLABS_API_KEY')
 user = ElevenLabsUser(e11key)
-duckyJr = user.get_voices_by_name("Morty")[0]
-currentVoice = duckyJr
+MortyVoice = user.get_voices_by_name("Morty")[0]
+currentVoice = MortyVoice
+messagesGPT = []
+
+def getMessageList() -> list:
+    return messagesGPT
+
+
+
+
+async def sendGPTPrompt(input: str, user: discord.User, persona: Persona.Persona, interaction: discord.Interaction) -> str:
+
+
+    
+    if len(messagesGPT) > 10:
+        messagesGPT.pop(0)
+
+    messagesGPT.append(persona)
+
+    messagesGPT.append({"role": "user", "name": user.name, "content": input})
+
+    logger.debug(f"[OpenAI] Messages: {messagesGPT}")
+
+    max_retries = 3
+    retry_delay = 5
+
+    for attempt in range(max_retries):
+                try:
+                    response = openai.ChatCompletion.create(
+                        model="gpt-3.5-turbo-0613",
+                        messages=messagesGPT,
+                        functions=GPTFunctions.functions,
+                        max_tokens=200,
+                        temperature=0.9, #randomness of response 0-2 higher = more random
+                    )
+                    response_message = response.choices[0].message
+                    logger.debug(f"[OpenAI] Response: {response_message}")
+                    messagesGPT.append(response_message)
+                    
+
+                    
+                    if response_message.get("function_call"):
+                        logger.debug(f"[OpenAI] Function call: {response_message['function_call']}")
+                        available_functions = {
+                            "get_userid_in_voice": GPTFunctions.get_userid_in_voice,
+                            "disconnect_user_in_voice": GPTFunctions.disconnect_user_in_voice
+                        }  
+                        
+                        #Get function name
+                        function_name = response_message["function_call"]["name"]
+
+                        #Get function to call
+                        fuction_to_call = available_functions[function_name]
+
+                        #Get function arguments
+                        function_args = json.loads(response_message["function_call"]["arguments"])
+
+                        #Call the function
+                        function_response = await fuction_to_call(
+                            username=function_args.get("username"),
+                            interaction=interaction
+                        )
+                        
+                        
+                        
+                        return f"Function call: {response_message['function_call']}\n\n Function Response: {function_response}"
+                        
+
+
+                    return response_message.content
+                    break
+                except Exception as e:
+                    logger.warning(f"[OpenAI] Error: {e}")
+                    if attempt < max_retries - 1:
+                        logger.warning(f"[OpenAI] Retrying in {retry_delay} seconds...")
+                        await asyncio.sleep(retry_delay)
+                        retry_delay *= 2
+                    else:
+                        logger.error("[OpenAI] Failed after max retries")
+                        raise e
+
+
 
 async def sendGPTMessage(input: str, user: str,textChannel: discord.TextChannel, voiceClient: discord.VoiceClient, persona: Persona.Persona):
     
-    messagesGPT = []
+    
     messagesGPT.append(persona)
 
     messagesGPT.append({"role": "user", "name": user, "content": input})

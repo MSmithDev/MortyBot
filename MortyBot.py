@@ -2,9 +2,10 @@ from typing import Optional
 import os
 import discord
 from discord.ext import commands
+from discord import option
 import random
 import modules.utils as utils
-from modules.OpenAI import SmartDamageGPT
+from modules.OpenAI import SmartDamageGPT, getMessageList, sendGPTPrompt
 from modules.SmartStockpile import getGuildStockpiles, makeStockpileEmbeds
 import modules.MortyUI as MortyUI
 import aiosqlite 
@@ -13,6 +14,7 @@ import asyncio
 import Voice
 from modules.Logger import setup_logger
 import logging
+import Persona
 
 #setup logging
 logger = setup_logger("mortybot", logging.DEBUG)
@@ -109,6 +111,23 @@ async def on_ready():
             
 
 
+#DEBUG COMMANDS
+@MortyBot.slash_command(name="debug", description="debug a prompt")
+@option(name="Prompt", type=str, required=True)
+async def setup(interaction: discord.Interaction, input: str):
+    """Debug a prompt"""
+    response = await sendGPTPrompt(input=input,user=interaction.user,interaction=interaction, persona=Persona.Persona.Chat.value)
+
+    await interaction.response.send_message(f"Prompt: {input}\n\n{response}",ephemeral=False)
+
+@MortyBot.slash_command(name="msg_list", description="debug the message list")
+async def setup(interaction: discord.Interaction):
+    """Debug the message list"""
+    
+    await interaction.response.send_message(f"Msg length: {len(getMessageList())}",ephemeral=False)
+
+
+
 
 #Setup MortyBot Channels
 @MortyBot.slash_command(name="setup", description="Setup MortyBot for your server")
@@ -123,7 +142,7 @@ async def voice_cmd(interaction: discord.Interaction):
     """Voice Control"""
 
     view = MortyUI.VoiceResponseUI(guild=interaction.guild, channel=interaction.channel)
-    await interaction.response.send_message("Voice Controls", view=view,ephemeral=True)
+    await interaction.response.send_message("Voice Controls", view=view,ephemeral=False)
 
 
 @MortyBot.slash_command(name="teststockpile", description="Test Stockpile")
