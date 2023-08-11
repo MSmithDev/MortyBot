@@ -153,3 +153,4 @@ cython_debug/
 
 #temp voice files
 tempvoice/
+speech.mp3
