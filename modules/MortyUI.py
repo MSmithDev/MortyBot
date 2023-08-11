@@ -1,7 +1,10 @@
 import discord
 import modules.utils as utils
+import modules.OpenAI as OpenAI
 from discord.ext import commands
 import logging
+import json
+import Persona
 
 logger = logging.getLogger("mortybot")
 #Configuration View
@@ -183,6 +186,7 @@ class VoiceResponseUI(discord.ui.View):
         self.recordState = False
         self.voiceClient: discord.VoiceClient = None
         self.connections = {}
+        self.voiceTarget = None
         self.add_buttons()
     
     def add_buttons(self):
@@ -251,10 +255,18 @@ class VoiceResponseUI(discord.ui.View):
                     with open(f"./tempvoice/{user_id}.mp3", "wb") as f:
                         f.write(audio.file.getbuffer())
 
+                transcript = await OpenAI.whisperProcess(f"./tempvoice/{self.voiceTarget.id}.mp3")
+
+                text = transcript['text']
+
                 #Send the files to the channel
-                await channel.send(
-                    f"Recorded {len(recorded_users)} users: {', '.join(recorded_users)}", files=files
-                )
+                #await channel.send(
+                #    f"Recorded {len(recorded_users)} users: {', '.join(recorded_users)}", files=files
+                #)
+
+                await channel.send(f"{self.voiceTarget.name} said: {text}")
+
+                await OpenAI.sendGPTMessage(persona=Persona.Persona.Chat.value, input=text, user=self.voiceTarget.name, textChannel=channel, voiceClient=self.voiceClient)
 
             
             
@@ -266,6 +278,7 @@ class VoiceResponseUI(discord.ui.View):
             await interaction.response.edit_message(content="Started! Recording...")
 
             voiceTarget = interaction.user
+            self.voiceTarget = voiceTarget
             logger.debug(f"[MortyUI] [VoiceResponse] voiceTarget: {voiceTarget.name}")
 
             self.connections.update({interaction.guild.id: self.voiceClient})
@@ -298,3 +311,7 @@ class VoiceResponseUI(discord.ui.View):
         self.add_item(leave)
         self.add_item(start)
         self.add_item(stop)
+
+
+
+

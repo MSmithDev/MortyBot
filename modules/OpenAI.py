@@ -5,6 +5,11 @@ import os
 import re
 from modules.SmartDamage import get_rounds_needed
 import logging
+import Persona
+import discord
+from elevenlabslib import *
+from elevenlabslib.helpers import *
+import requests
 
 #setup logging
 logger = logging.getLogger("mortybot")
@@ -95,9 +100,9 @@ async def SmartDamageGPT(sql: aiosqlite.Connection, question: str):
         return response_message.content
     
 
-def whisperProcess(file: str) -> str:
+async def whisperProcess(file: str) -> str:
 
-    audio_file = open(f"./tempvoice/{file}.mp3", "rb")
+    audio_file = open(file, "rb")
 
     if audio_file is None:
         logger.warning(f"[OpenAI] File not found: {file}")
@@ -109,3 +114,76 @@ def whisperProcess(file: str) -> str:
         logger.debug(f"[OpenAI] Transcript: {transcript}")
 
         return transcript
+
+
+
+
+e11key = os.getenv('ELEVENLABS_API_KEY')
+user = ElevenLabsUser(e11key)
+duckyJr = user.get_voices_by_name("Morty")[0]
+currentVoice = duckyJr
+
+async def sendGPTMessage(input: str, user: str,textChannel: discord.TextChannel, voiceClient: discord.VoiceClient, persona: Persona.Persona):
+    
+    messagesGPT = []
+    messagesGPT.append(persona)
+
+    messagesGPT.append({"role": "user", "name": user, "content": input})
+
+    logger.debug(f"[OpenAI] Messages: {messagesGPT}")
+
+    max_retries = 3
+    retry_delay = 5
+
+    for attempt in range(max_retries):
+                try:
+                    ##If voice connected limit tokens.
+                    if voiceClient is not None:
+                        if voiceClient.is_connected():
+                            completion = openai.ChatCompletion.create(
+                            model="gpt-4",
+                            messages=messagesGPT,
+                            max_tokens=200,
+                            temperature=1.0, #randomness of response 0-2 higher = more random
+                    )
+                    
+
+                    ##Normal limit 250 tokens. Show typing indicator
+                    else:
+                        async with textChannel.typing():
+                            completion = openai.ChatCompletion.create(
+                                model="gpt-3.5-turbo",
+                                messages=messagesGPT,
+                                max_tokens=250,
+                                temperature=1.0, #randomness of response 0-2 higher = more random
+                            )
+                    chat_response = completion.choices[0].message.content
+                    messagesGPT.append({"role": "assistant", "content": chat_response})
+
+
+                    ## If in voice channel speak instead of type
+                    if voiceClient is not None:
+                        if voiceClient.is_connected():
+                            voicedata = currentVoice.generate_audio_bytes(chat_response)
+                            save_audio_bytes(voicedata, "speech.mp3", outputFormat="mp3")
+                            
+                            #free but bad tts
+                            #engine = pyttsx3.init()
+                            #filename = "speech.mp3"
+                            #engine.save_to_file(chat_response, filename)
+                            #engine.runAndWait()
+
+                            voiceClient.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source="speech.mp3"))
+                    else:
+                        await textChannel.send(chat_response)
+                    break
+
+                except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as e:
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        await textChannel.send("An error occurred while communicating with the OpenAI API. Please try again later.")
+                        break
+
+    pass
