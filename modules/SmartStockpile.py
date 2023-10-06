@@ -61,6 +61,7 @@ async def makeStockpileEmbeds(stockpile: List[Stockpile], interaction: discord.I
         embed.add_field(name="Location", value=locations)
         embed.add_field(name="Code", value=codes)
         embed.add_field(name="Expires", value=expires)
+        embed.set_thumbnail(url="https://static.wikia.nocookie.net/foxhole_gamepedia_en/images/d/d7/Map_Endless_Shore.png/revision/latest/scale-to-width-down/1000?cb=20220924114234")
         await interaction.channel.send(embed=embed)
     return "todo"
 

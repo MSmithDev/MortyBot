@@ -43,6 +43,7 @@ if BotGPT_ID == '0':
 
 CoreChannelID = os.getenv('CORE_CHANNEL', '0')
 FoxDamageChannelID = os.getenv('FOX_DAMAGE_CHANNEL', '0')
+FoxDamageChannelID2 = 1159922670528376973
 
 SmartDamageDB = None
 MortyBotDB = None
@@ -173,7 +174,7 @@ async def on_message(message: discord.Message):
 
 
     #If message is in Smart Damage Channel process it
-    if message.channel.id == int(FoxDamageChannelID) and message.author.id != int(BotGPT_ID):
+    if message.channel.id == int(FoxDamageChannelID) or FoxDamageChannelID2 and message.author.id != int(BotGPT_ID):
         logger.debug("[MortyBot] Processing Smart Damage Message...")
         async with message.channel.typing():
             await message.reply(await SmartDamageGPT(SmartDamageDB,message.content))
