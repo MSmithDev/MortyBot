@@ -151,29 +151,6 @@ class UpdateChannelConfigView(discord.ui.View):
     
         cancel.callback = cancelCallback
         self.add_item(cancel)
-    
-
-    #Stockpile edit buttons
-class StockpileEditButtons(discord.ui.View):
-
-    def __init__(self, sql, guild,channel):
-        super().__init__(timeout=None)
-        self.sql = sql
-        self.guild = guild
-        self.channel = channel
-        self.add_buttons()
-
-    def add_buttons(self):
-        
-        cancel = discord.ui.Button(label='Cancel', style=discord.ButtonStyle.red, row=1)
-
-        async def cancelCallback(interaction: discord.Interaction):
-            print("Cancel Button Clicked")
-            view = SetupView(self.sql,self.guild)
-            await interaction.response.edit_message(content="Choose an option to configure:",view=view)
-    
-        cancel.callback = cancelCallback
-        self.add_item(cancel)
 
 
 
@@ -314,4 +291,25 @@ class VoiceResponseUI(discord.ui.View):
 
 
 
+#Stockpile edit buttons
 
+class StockpileEditButtons(discord.ui.View):
+
+    def __init__(self, buttons: list):
+        super().__init__(timeout=None)
+        self.buttons = buttons
+        self.add_buttons()
+
+    def add_buttons(self):
+        
+        #Create a button for each item in buttons
+        for index, (button) in enumerate(self.buttons):
+            b = discord.ui.Button(label=f"{index}", row=0)
+
+            async def callback(interaction: discord.Interaction, index=index):
+                print(f"[MortyUI] [StockpileEdit] Index: {index} Button Clicked")
+                #await interaction.response.edit_message(content=button['label'])
+                await interaction.channel.send(f"Button Clicked: {index}")
+
+            b.callback = callback
+            self.add_item(b)
