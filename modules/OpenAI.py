@@ -21,12 +21,12 @@ logger = logging.getLogger("mortybot")
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 
-SmartDamagaMsgs = [{"role": "system", "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous. Names of targets and weapons are from the game Foxhole. Tiers can be represented as Tier 1,2,3 or t1,t2,t3. Remove spaces from target names and do not include the tier. Ammo types: [12.7mm,Mammon,Tremola,30mm,RPG,40mm,75mm,FireRocket,Mortar,HERocket,120mm,150mm,300mm,Ignifist,APRPG,68mm,ARCRPG,94.5mm,Satchel,Hydra,250mm,Havoc] an example would be 'How many 150mm to kill a t3 relic base' 150mm is the ammo, t3 is tier 3, and relic base is the target."}]
+SmartDamageMsgs = [{"role": "system", "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous. Names of targets and weapons are from the game Foxhole. Tiers can be represented as Tier 1,2,3 or t1,t2,t3. Remove spaces from target names and do not include the tier. Ammo types: [12.7mm,Mammon,Tremola,30mm,RPG,40mm,75mm,FireRocket,Mortar,HERocket,120mm,150mm,300mm,Ignifist,APRPG,68mm,ARCRPG,94.5mm,Satchel,Hydra,250mm,Havoc] an example would be 'How many 150mm to kill a t3 relic base' 150mm is the ammo, t3 is tier 3, and relic base is the target."}]
 
 async def SmartDamageGPT(sql: aiosqlite.Connection, question: str):
 
     print(f"[GPT] querySmartDamage: {question}")
-    SmartDamagaMsgs.append({"role": "user", "content": question})
+    SmartDamageMsgs.append({"role": "user", "content": question})
     functions = [
         {
             "name": "get_rounds_needed",
@@ -53,7 +53,7 @@ async def SmartDamageGPT(sql: aiosqlite.Connection, question: str):
     ]
     response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo-0613",
-            messages=SmartDamagaMsgs,
+            messages=SmartDamageMsgs,
             functions=functions,
             function_call="auto",
             #function_call={"name": "get_rounds_needed"}  # auto is default, but we'll be explicit
@@ -61,7 +61,7 @@ async def SmartDamageGPT(sql: aiosqlite.Connection, question: str):
     response_message = response.choices[0].message
     
     #Add the response to the messages list
-    SmartDamagaMsgs.append(response_message)
+    SmartDamageMsgs.append(response_message)
 
 
     print("[GPT] Response: ",response_message)
@@ -84,8 +84,8 @@ async def SmartDamageGPT(sql: aiosqlite.Connection, question: str):
         )
 
         # Step 4: send the info on the function call and function response to GPT
-        SmartDamagaMsgs.append(response_message)  # extend conversation with assistant's reply
-        SmartDamagaMsgs.append(
+        SmartDamageMsgs.append(response_message)  # extend conversation with assistant's reply
+        SmartDamageMsgs.append(
             {
                 "role": "function",
                 "name": function_name,
@@ -94,11 +94,11 @@ async def SmartDamageGPT(sql: aiosqlite.Connection, question: str):
         )  # extend conversation with function response
         second_response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo-0613",
-            messages=SmartDamagaMsgs,
+            messages=SmartDamageMsgs,
         )  # get a new response from GPT where it can see the function response
         second_response_msg = second_response.choices[0].message
         print("[GPT] Response after function: "+second_response_msg.content)
-        SmartDamagaMsgs.append(second_response_msg)
+        SmartDamageMsgs.append(second_response_msg)
         return second_response_msg.content
     else:
         return response_message.content
