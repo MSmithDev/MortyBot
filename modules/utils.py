@@ -1,7 +1,7 @@
 import tiktoken
 import aiosqlite
 import discord
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import List
 
@@ -186,4 +186,4 @@ class Sinks(Enum):
     mp4 = discord.sinks.MP4Sink()
     m4a = discord.sinks.M4ASink()
 
-    
+

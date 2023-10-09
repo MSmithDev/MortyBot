@@ -146,6 +146,22 @@ async def voice_cmd(interaction: discord.Interaction):
     await interaction.response.send_message("Voice Controls", view=view,ephemeral=False)
 
 
+#Razz Quotes
+@MortyBot.slash_command(name="words_by_razz", description="Generate a Razz Quote")
+@option(name="inspire", type=str, required=False, description="Use this as inspiration")
+async def setup(interaction: discord.Interaction, inspire=None):
+    """Debug a prompt"""
+
+    if inspire is None:
+        inspire = "Make one quote"
+
+    else:
+        inspire = f"Make one quote using this as inspiration: '{inspire}'"
+    response = await sendGPTPrompt(input=inspire,user=interaction.user,interaction=interaction, persona=Persona.Persona.Razz.value)
+
+    await interaction.response.send_message(response,ephemeral=False)
+
+
 @MortyBot.slash_command(name="teststockpile", description="Test Stockpile")
 async def stockpile(interaction: discord.Interaction):
     """Stockpile Test Command"""
@@ -162,6 +178,14 @@ async def stockpile(interaction: discord.Interaction):
     else:
         raise ValueError('Interaction Guild is None')
 
+@MortyBot.slash_command(name="txt", description="send msg")
+@option(name="channel", type=str, required=True)
+@option(name="Prompt", type=str, required=True)
+async def setup(interaction: discord.Interaction, channel: str, msg: str):
+    """send msg to channel"""
+
+    channel = await MortyBot.fetch_channel(int(channel))
+    await channel.send(msg)
 
 @MortyBot.event
 async def on_message(message: discord.Message):
@@ -174,7 +198,7 @@ async def on_message(message: discord.Message):
 
 
     #If message is in Smart Damage Channel process it
-    if message.channel.id == int(FoxDamageChannelID) or FoxDamageChannelID2 and message.author.id != int(BotGPT_ID):
+    if message.channel.id == FoxDamageChannelID2 and message.author.id != int(BotGPT_ID):
         logger.debug("[MortyBot] Processing Smart Damage Message...")
         async with message.channel.typing():
             await message.reply(await SmartDamageGPT(SmartDamageDB,message.content))

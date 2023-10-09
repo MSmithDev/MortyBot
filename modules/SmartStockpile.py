@@ -1,69 +1,81 @@
 import discord
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
 from collections import defaultdict
-import modules.utils as utils
+
+# Consider creating a utils.py file for utility functions like discordTimestamp
+import modules.utils as utils  
+
 @dataclass
 class Stockpile:
     guild: int
-    townid: int
+    hexid: int
+    hexname: str
     townname: str
     stockpileid: int
-    location: str
+    townid: int
+    stockpilename: str
     code: int
     expires: int
     created: str
-    last: str
+    lastperson: str
 
 
 async def getGuildStockpiles(sql, guild):
-
-    #Build the query based on the parameters given
     query = f"""
-    SELECT stockpiles.townid, towns.name, stockpiles.stockpileid, stockpiles.location, stockpiles.code,
-    stockpiles.expires, stockpiles.createdby, stockpiles.lastperson
-    FROM stockpiles INNER JOIN towns ON stockpiles.townid=towns.townid
-    WHERE stockpiles.guild={guild}
+        SELECT 
+            sp.hexid, h.name AS hex_name, t.name AS town_name, sp.stockpileid, 
+            sp.townid, sp.name AS stockpile_name, sp.code, sp.expires, 
+            sp.createdby, sp.lastperson
+        FROM 
+            stockpiles sp
+        INNER JOIN hexs h ON sp.hexid=h.hexid
+        INNER JOIN towns t ON sp.townid=t.townid 
+        WHERE 
+            sp.guild={guild}
     """
-
-    #execute the query
+    
     cursor = await sql.execute(query)
-
-    #Get the results
     rows = await cursor.fetchall()
-
-    #List of stockpiles
-    stockpiles: List[Stockpile] = []
     
-    #Loop through the results and create a stockpile object for each
-    for row in rows:
-        stockpiles.append(Stockpile(guild,row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7]))
+    return [Stockpile(guild, *row) for row in rows]
 
-    return stockpiles
 
-async def makeStockpileEmbeds(stockpile: List[Stockpile], interaction: discord.Interaction):
-    await interaction.response.send_message("Testing", ephemeral=True)
-    stockpiles_by_town = defaultdict(list)
-    for pile in stockpile:
-        stockpiles_by_town[pile.townid].append(pile)
+async def makeStockpileEmbeds(stockpiles: List[Stockpile], interaction: discord.Interaction):
+    await interaction.response.send_message("Generating embeds...", ephemeral=True)
 
-    for townid, town_stockpiles in stockpiles_by_town.items():
-        title = f"Stockpiles in {town_stockpiles[0].townname}"
-        print("[SmartStockpile] Title before: " + str(len(title)))
-        print("[SmartStockpile] Title after: " + str(len(utils.padEmbed(title))))
-        embed = discord.Embed(title=utils.padEmbed(title))
+    stockpiles_by_hex = defaultdict(list)
+    for pile in stockpiles:
+        stockpiles_by_hex[pile.hexid].append(pile)
 
-        # Prepare the values for each field
-        locations = '\n'.join([pile.location for pile in town_stockpiles])
-        codes = '\n'.join([str(pile.code) for pile in town_stockpiles])
-        expires = '\n'.join([utils.discordTimestamp(pile.expires) for pile in town_stockpiles])  # You might need to format this differently
-
-        embed.add_field(name="Location", value=locations)
-        embed.add_field(name="Code", value=codes)
-        embed.add_field(name="Expires", value=expires)
-        embed.set_thumbnail(url="https://static.wikia.nocookie.net/foxhole_gamepedia_en/images/d/d7/Map_Endless_Shore.png/revision/latest/scale-to-width-down/1000?cb=20220924114234")
+    for hex, piles in stockpiles_by_hex.items():
+        embed = createHexEmbed(piles)
         await interaction.channel.send(embed=embed)
-    return "todo"
-
-
     
+    return "Embeds sent!"
+
+
+def createHexEmbed(piles: List[Stockpile]) -> discord.Embed:
+    first_pile = piles[0]
+    embed = discord.Embed(title=utils.padEmbed(f"Stockpiles in {first_pile.hexname}"))  # Added padding back
+
+    towns = set(pile.townname for pile in piles)
+    for town in towns:
+        town_piles = [pile for pile in piles if pile.townname == town]
+        addTownToEmbed(town_piles, embed)
+
+    embed.set_thumbnail(url="https://static.wikia.nocookie.net/foxhole_gamepedia_en/images/d/d7/Map_Endless_Shore.png/revision/latest/scale-to-width-down/1000?cb=20220924114234")
+    return embed
+
+
+
+def addTownToEmbed(town_piles: List[Stockpile], embed: discord.Embed):
+    town_name = town_piles[0].townname
+    
+    locations = '\n'.join(pile.stockpilename for pile in town_piles)
+    codes = '\n'.join(str(pile.code) for pile in town_piles)
+    expires = '\n'.join(utils.discordTimestamp(pile.expires) for pile in town_piles)
+
+    embed.add_field(name=town_name, value=locations, inline=True)
+    embed.add_field(name="Code", value=codes, inline=True)
+    embed.add_field(name="Expires", value=expires, inline=True)

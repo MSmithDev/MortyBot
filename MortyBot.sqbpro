@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="R:/git stuff/MortyBot/MortyBot.db" readonly="0" foreign_keys="" case_sensitive_like="" temp_store="" wal_autocheckpoint="" synchronous=""/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="2332"/><column_width id="4" width="0"/></tab_structure><tab_browse><current_table name="0,0:"/><default_encoding codec=""/><browse_table_settings/></tab_browse><tab_sql><sql name="SQL 1">SELECT stockpiles.hexid, hexs.name AS hex_name, towns.name AS town_name, stockpiles.stockpileid, 
+       stockpiles.townid, stockpiles.name AS stockpile_name, stockpiles.code, stockpiles.expires, 
+       stockpiles.createdby, stockpiles.lastperson
+FROM stockpiles 
+INNER JOIN hexs ON stockpiles.hexid=hexs.hexid
+INNER JOIN towns ON stockpiles.townid=towns.townid 
+WHERE stockpiles.guild=1159886932755632199
+
+</sql><current_tab id="0"/></tab_sql></sqlb_project>
