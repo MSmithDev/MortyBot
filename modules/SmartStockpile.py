@@ -2,9 +2,16 @@ import discord
 from dataclasses import dataclass
 from typing import List, Dict
 from collections import defaultdict
-
-# Consider creating a utils.py file for utility functions like discordTimestamp
 import modules.utils as utils  
+
+#Views
+from modules.MortyUI import StockpileEditButtons
+
+#setup logging
+import logging
+logger = logging.getLogger("mortybot")
+
+
 
 @dataclass
 class Stockpile:
@@ -44,13 +51,18 @@ async def getGuildStockpiles(sql, guild):
 async def makeStockpileEmbeds(stockpiles: List[Stockpile], interaction: discord.Interaction):
     await interaction.response.send_message("Generating embeds...", ephemeral=True)
 
+    
+
     stockpiles_by_hex = defaultdict(list)
     for pile in stockpiles:
         stockpiles_by_hex[pile.hexid].append(pile)
 
     for hex, piles in stockpiles_by_hex.items():
-        embed = createHexEmbed(piles)
-        await interaction.channel.send(embed=embed)
+        embed, edit_buttons = createHexEmbed(piles)
+
+        view = StockpileEditButtons(buttons=edit_buttons)
+
+        await interaction.channel.send(embed=embed,view=view)
     
     return "Embeds sent!"
 
@@ -58,24 +70,73 @@ async def makeStockpileEmbeds(stockpiles: List[Stockpile], interaction: discord.
 def createHexEmbed(piles: List[Stockpile]) -> discord.Embed:
     first_pile = piles[0]
     embed = discord.Embed(title=utils.padEmbed(f"Stockpiles in {first_pile.hexname}"))  # Added padding back
-
+    button_index = []
+    edit_buttons = []
+    index = 0
     towns = set(pile.townname for pile in piles)
     for town in towns:
-        town_piles = [pile for pile in piles if pile.townname == town]
-        addTownToEmbed(town_piles, embed)
+        town_piles = []
+        for pile in piles:
+            index += 1
+            button_index.append(f"{index}")
+            if pile.townname == town:
+                town_piles.append(pile)
+
+        
+        edit_buttons.extend(addTownToEmbed(town_piles, embed, button_index))
 
     embed.set_thumbnail(url="https://static.wikia.nocookie.net/foxhole_gamepedia_en/images/d/d7/Map_Endless_Shore.png/revision/latest/scale-to-width-down/1000?cb=20220924114234")
-    return embed
+    
+    
+    return embed, edit_buttons
 
 
 
-def addTownToEmbed(town_piles: List[Stockpile], embed: discord.Embed):
+def addTownToEmbed(town_piles: List[Stockpile], embed: discord.Embed, button_index: List[str]):
+    edit_buttons = []
+    
     town_name = town_piles[0].townname
     
-    locations = '\n'.join(pile.stockpilename for pile in town_piles)
+    #for each location add an entry to edit_buttons array
+    for index,(pile) in enumerate(town_piles):
+        edit_buttons.append(index)
+
+    
+    locations = []
+    for index, pile in enumerate(town_piles):
+        # Append the index and stockpile name to the locations list
+        location_with_index = f"{button_index[0]}: {pile.stockpilename}"
+        locations.append(location_with_index)
+        edit_buttons.pop(0)
+
+    locations = '\n'.join(locations)
+    
+    #locations = '\n'.join(pile.stockpilename for pile in town_piles)
     codes = '\n'.join(str(pile.code) for pile in town_piles)
     expires = '\n'.join(utils.discordTimestamp(pile.expires) for pile in town_piles)
 
     embed.add_field(name=town_name, value=locations, inline=True)
     embed.add_field(name="Code", value=codes, inline=True)
     embed.add_field(name="Expires", value=expires, inline=True)
+
+    return edit_buttons
+
+async def addGuildStockpile(sql, guild, stockpile: Stockpile):
+
+    last_person_value = f'"{stockpile.lastperson}"' if stockpile.lastperson else "NULL"
+
+    query = f"""
+        INSERT INTO stockpiles 
+            (hexid, guild, townid, name, code, expires, createdby, lastperson) 
+        VALUES 
+            ({stockpile.hexid}, {guild}, {stockpile.townid}, "{stockpile.stockpilename}", {stockpile.code}, {stockpile.expires}, "{stockpile.created}", {last_person_value})
+    """
+
+    logger.debug(f"[MortyBot] Adding stockpile to guild {guild}: {stockpile}")
+    
+    cursor = await sql.execute(query)
+    await sql.commit()
+
+    logger.debug(f"[MortyBot] Stockpile added to guild {guild}")
+
+    #Todo: Re-render the embeds for the guild
