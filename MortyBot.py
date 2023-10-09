@@ -195,13 +195,25 @@ async def on_message(message: discord.Message):
     if message.content.startswith(BotGPT_ID):
         await message.channel.send('Hello!')
     
-
-
+    for server in utils.Servers:
+        server_id = server.GUILD_ID
+        
+        if server_id == message.guild.id:
+            if message.author.id != int(BotGPT_ID):
+                logger.debug(f"[MortyBot]({server_id}) Processing Message...")
+                async with message.channel.typing():
+                    await message.reply(await SmartDamageGPT(SmartDamageDB,message.content))
+                
+        
+        
+        
+        
+       
     #If message is in Smart Damage Channel process it
-    if message.channel.id == FoxDamageChannelID2 and message.author.id != int(BotGPT_ID):
-        logger.debug("[MortyBot] Processing Smart Damage Message...")
-        async with message.channel.typing():
-            await message.reply(await SmartDamageGPT(SmartDamageDB,message.content))
+    #if message.channel.id == FoxDamageChannelID2 and message.author.id != int(BotGPT_ID):
+    #    logger.debug("[MortyBot] Processing Smart Damage Message...")
+    #    async with message.channel.typing():
+    #        await message.reply(await SmartDamageGPT(SmartDamageDB,message.content))
 
 
 MortyBot.run(discord_token)
