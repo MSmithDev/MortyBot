@@ -196,14 +196,15 @@ async def on_message(message: discord.Message):
         await message.channel.send('Hello!')
     
     for server in utils.Servers:
+
         server_id = server.GUILD_ID
-        
-        if server_id == message.guild.id:
-            if message.author.id != int(BotGPT_ID):
-                logger.debug(f"[MortyBot]({server_id}) Processing Message...")
-                async with message.channel.typing():
-                    await message.reply(await SmartDamageGPT(SmartDamageDB,message.content))
-                
+        if message.guild is not None:
+            if server_id == message.guild.id:
+                if message.author.id != int(BotGPT_ID):
+                    logger.debug(f"[MortyBot]({server_id}) Processing Message...")
+                    async with message.channel.typing():
+                        await message.reply(await SmartDamageGPT(SmartDamageDB,message.content))
+                    
         
         
         
