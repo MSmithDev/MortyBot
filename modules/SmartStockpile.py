@@ -67,32 +67,45 @@ async def makeStockpileEmbeds(stockpiles: List[Stockpile], interaction: discord.
     return "Embeds sent!"
 
 
+
 def createHexEmbed(piles: List[Stockpile]) -> discord.Embed:
     first_pile = piles[0]
     embed = discord.Embed(title=utils.padEmbed(f"Stockpiles in {first_pile.hexname}"))  # Added padding back
-    button_index = []
+    
+    #Button objects
+    linked_buttons = []
+    
+    #Button index
+    
+
     edit_buttons = []
     index = 0
     towns = set(pile.townname for pile in piles)
     for town in towns:
         town_piles = []
+        button_index = []
+        linked_buttons.clear()
         for pile in piles:
-            index += 1
-            button_index.append(f"{index}")
+            
             if pile.townname == town:
+                label= f"L{index}"
+                new = utils.linkedStockpile(index=index, stockpile_id=pile.stockpileid, button_label=label)
+                linked_buttons.append(new)
+                button_index.append(index)
+                index += 1
                 town_piles.append(pile)
 
         
-        edit_buttons.extend(addTownToEmbed(town_piles, embed, button_index))
+        edit_buttons.extend(addTownToEmbed(town_piles, embed, button_index, linked_buttons))
 
     embed.set_thumbnail(url="https://static.wikia.nocookie.net/foxhole_gamepedia_en/images/d/d7/Map_Endless_Shore.png/revision/latest/scale-to-width-down/1000?cb=20220924114234")
     
     
-    return embed, edit_buttons
+    return embed, linked_buttons
 
 
 
-def addTownToEmbed(town_piles: List[Stockpile], embed: discord.Embed, button_index: List[str]):
+def addTownToEmbed(town_piles: List[Stockpile], embed: discord.Embed, button_index: list, linked_buttons: List[utils.linkedStockpile]):
     edit_buttons = []
     
     town_name = town_piles[0].townname
@@ -105,9 +118,9 @@ def addTownToEmbed(town_piles: List[Stockpile], embed: discord.Embed, button_ind
     locations = []
     for index, pile in enumerate(town_piles):
         # Append the index and stockpile name to the locations list
-        location_with_index = f"{button_index[0]}: {pile.stockpilename}"
+        location_with_index = f"{linked_buttons[index].button_label}: {pile.stockpilename}"
         locations.append(location_with_index)
-        edit_buttons.pop(0)
+        button_index.pop(0)
 
     locations = '\n'.join(locations)
     

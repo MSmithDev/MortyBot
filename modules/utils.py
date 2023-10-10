@@ -187,3 +187,8 @@ class Sinks(Enum):
     m4a = discord.sinks.M4ASink()
 
 
+@dataclass
+class linkedStockpile:
+    index: int
+    stockpile_id: int
+    button_label: str

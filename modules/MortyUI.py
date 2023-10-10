@@ -2,9 +2,11 @@ import discord
 import modules.utils as utils
 import modules.OpenAI as OpenAI
 from discord.ext import commands
+from typing import List, Dict
 import logging
 import json
 import Persona
+from dataclasses import dataclass
 
 logger = logging.getLogger("mortybot")
 #Configuration View
@@ -291,24 +293,21 @@ class VoiceResponseUI(discord.ui.View):
 
 
 
-#Stockpile edit buttons
 
 class StockpileEditButtons(discord.ui.View):
 
-    def __init__(self, buttons: list):
+    def __init__(self, buttons: List[utils.linkedStockpile]):
         super().__init__(timeout=None)
         self.buttons = buttons
         self.add_buttons()
 
     def add_buttons(self):
-        
-        #Create a button for each item in buttons
-        for index, (button) in enumerate(self.buttons):
-            b = discord.ui.Button(label=f"{index}", row=0)
+        # Create a button for each item in buttons
+        for button in self.buttons:
+            b = discord.ui.Button(label=button.button_label, row=0)
 
-            async def callback(interaction: discord.Interaction, index=index):
-                print(f"[MortyUI] [StockpileEdit] Index: {index} Button Clicked")
-                #await interaction.response.edit_message(content=button['label'])
+            async def callback(interaction: discord.Interaction, stockpile_id=button.stockpile_id, index=button.index):
+                print(f"[MortyUI] [StockpileEdit] Stockpile ID: {stockpile_id} Button Clicked")
                 await interaction.channel.send(f"Button Clicked: {index}")
 
             b.callback = callback
