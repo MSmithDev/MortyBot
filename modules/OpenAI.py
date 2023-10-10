@@ -207,7 +207,7 @@ async def sendGPTPrompt(input: str, user: discord.User, persona: Persona.Persona
 
 
 
-async def sendGPTMessage(input: str, user: str,textChannel: discord.TextChannel, voiceClient: discord.VoiceClient, persona: Persona.Persona):
+async def sendGPTMessage(input: str, user: str,persona: Persona.Persona, voiceClient: discord.VoiceClient = None):
     
     
     messagesGPT.append(persona)
@@ -234,13 +234,12 @@ async def sendGPTMessage(input: str, user: str,textChannel: discord.TextChannel,
 
                     ##Normal limit 250 tokens. Show typing indicator
                     else:
-                        async with textChannel.typing():
-                            completion = openai.ChatCompletion.create(
-                                model="gpt-3.5-turbo",
-                                messages=messagesGPT,
-                                max_tokens=250,
-                                temperature=1.0, #randomness of response 0-2 higher = more random
-                            )
+                        completion = openai.ChatCompletion.create(
+                            model="gpt-3.5-turbo",
+                            messages=messagesGPT,
+                            max_tokens=250,
+                            temperature=1.0, #randomness of response 0-2 higher = more random
+                        )
                     chat_response = completion.choices[0].message.content
                     messagesGPT.append({"role": "assistant", "content": chat_response})
 
@@ -250,16 +249,10 @@ async def sendGPTMessage(input: str, user: str,textChannel: discord.TextChannel,
                         if voiceClient.is_connected():
                             voicedata = currentVoice.generate_audio_bytes(chat_response)
                             save_audio_bytes(voicedata, "speech.mp3", outputFormat="mp3")
-                            
-                            #free but bad tts
-                            #engine = pyttsx3.init()
-                            #filename = "speech.mp3"
-                            #engine.save_to_file(chat_response, filename)
-                            #engine.runAndWait()
 
                             voiceClient.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source="speech.mp3"))
                     else:
-                        await textChannel.send(chat_response)
+                        return chat_response
                     break
 
                 except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as e:
@@ -267,7 +260,16 @@ async def sendGPTMessage(input: str, user: str,textChannel: discord.TextChannel,
                         time.sleep(retry_delay)
                         continue
                     else:
-                        await textChannel.send("An error occurred while communicating with the OpenAI API. Please try again later.")
-                        break
+                       return "An error occurred while communicating with the OpenAI API. Please try again later."
 
     pass
+
+async def sendVoiceMessage(message: str, voiceClient: discord.VoiceClient):
+    if voiceClient.is_connected():
+        voicedata = currentVoice.generate_audio_bytes(message)
+        save_audio_bytes(voicedata, "speech.mp3", outputFormat="mp3")
+
+        voiceClient.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source="speech.mp3"))
+    else:
+        logger.debug("[sendVoiceMessage] Voice not connected")
+     

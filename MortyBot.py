@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord import option
 import random
 import modules.utils as utils
-from modules.OpenAI import SmartDamageGPT, getMessageList, sendGPTPrompt
+from modules.OpenAI import SmartDamageGPT, getMessageList, sendGPTPrompt, sendGPTMessage, sendVoiceMessage
 from modules.SmartStockpile import getGuildStockpiles, makeStockpileEmbeds
 import modules.MortyUI as MortyUI
 import aiosqlite 
@@ -127,7 +127,16 @@ async def setup(interaction: discord.Interaction):
     
     await interaction.response.send_message(f"Msg length: {len(getMessageList())}",ephemeral=False)
 
+#Echo to voice
+@MortyBot.slash_command(name="echo", description="speak through the bot")
+@option(name="message", type=str, required=True)
+async def setup(interaction: discord.Interaction, message: str):
+    """Speak through the bot"""
+    
+    await sendVoiceMessage(message=message, voiceClient=interaction.guild.voice_client)
 
+    await interaction.response.send_message(f"Message sent to voice",ephemeral=False)
+    
 
 
 #Setup MortyBot Channels
@@ -190,31 +199,33 @@ async def setup(interaction: discord.Interaction, channel: str, msg: str):
 @MortyBot.event
 async def on_message(message: discord.Message):
     print(f"[MSG] From: [{message.author.name}] ChannelID: [{message.channel.id}] Content: [{message.content}]")
-    
 
-    if message.content.startswith(BotGPT_ID):
-        await message.channel.send('Hello!')
-    
+    #Process messages for servers
     for server in utils.Servers:
 
         server_id = server.GUILD_ID
-        if message.guild is not None:
+        if message.guild is not None and message.author.id != int(BotGPT_ID):
             if server_id == message.guild.id:
-                if message.author.id != int(BotGPT_ID):
-                    logger.debug(f"[MortyBot]({server_id}) Processing Message...")
+
+
+                #If message is in Smart Damage Channel process it
+                if message.channel.id == server.SMARTDAMAGE_CHANNEL:
+                    logger.debug(f"[MortyBot]({server_id}) Processing SmartDamage Message...")
                     async with message.channel.typing():
+                        
+                        #reply to message
                         await message.reply(await SmartDamageGPT(SmartDamageDB,message.content))
                     
-        
-        
-        
-        
-       
-    #If message is in Smart Damage Channel process it
-    #if message.channel.id == FoxDamageChannelID2 and message.author.id != int(BotGPT_ID):
-    #    logger.debug("[MortyBot] Processing Smart Damage Message...")
-    #    async with message.channel.typing():
-    #        await message.reply(await SmartDamageGPT(SmartDamageDB,message.content))
+
+                #If message is in Core Channel or tagged bot process it
+                if message.channel.id == server.CORE_CHANNEL:
+                    logger.debug(f"[MortyBot]({server_id}) Processing Core Message...")
+
+                    #use typing indicator
+                    async with message.channel.typing():
+                        
+                        #reply to message
+                        await message.reply(await sendGPTMessage(input=message.content,user=message.author.name, persona=Persona.Persona.Chat.value, voiceClient=message.guild.voice_client))
 
 
 MortyBot.run(discord_token)
