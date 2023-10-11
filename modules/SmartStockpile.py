@@ -60,9 +60,8 @@ from modules.MortyUI import StockpileEditButtons
 import logging
 logger = logging.getLogger("mortybot")
 
-# Define function to generate stockpile embeds
+
 async def makeStockpileEmbeds(stockpiles: List[Stockpile], interaction: discord.Interaction):
-    # Send a message to indicate that the embeds are being generated
     await interaction.response.send_message("Generating embeds...", ephemeral=True)
 
     # Create a dictionary to map hexes to towns and stockpiles
@@ -72,7 +71,6 @@ async def makeStockpileEmbeds(stockpiles: List[Stockpile], interaction: discord.
 
     # Loop through each hex in the dictionary
     for hex in hex_town_map.items():
-        # Set up variables for the loop
         pileIndex = 0
         linkedButtons = []
 
@@ -82,10 +80,10 @@ async def makeStockpileEmbeds(stockpiles: List[Stockpile], interaction: discord.
 
         # Loop through each town in the hex
         for town in hex[1]:
+
             # Set the title of the embed to the hex name
             embed.title = utils.padEmbed(f"Stockpiles in {hex[1][town][0].hexname}")
 
-            # Set up variables for the loop
             locations = ""
             codes = ""
             expires = ""
@@ -113,7 +111,6 @@ async def makeStockpileEmbeds(stockpiles: List[Stockpile], interaction: discord.
         # Send the embed with the view
         await interaction.channel.send(embed=embed, view=view)
 
-    # Return a message indicating that the embeds have been sent
     return "Embeds sent!"
 
 
