@@ -304,7 +304,7 @@ class StockpileEditButtons(discord.ui.View):
     def add_buttons(self):
         # Create a button for each item in buttons
         for button in self.buttons:
-            b = discord.ui.Button(label=button.button_label, row=0)
+            b = discord.ui.Button(label=button.button_label)
 
             async def callback(interaction: discord.Interaction, stockpile_id=button.stockpile_id, index=button.index):
                 print(f"[MortyUI] [StockpileEdit] Stockpile ID: {stockpile_id} Button Clicked")
