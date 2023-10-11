@@ -105,8 +105,9 @@ async def on_ready():
         if(server.ISCONFIGURED == True and server.CORE_CHANNEL != 0):
             core_channel = await MortyBot.fetch_channel(server.CORE_CHANNEL)
             random_greeting = random.choice(morty_greetings)
-            logger.debug(f"[MortyBot] Sending greeting to {server.GUILD_NAME} ({server.GUILD_ID})")
-            await core_channel.send(random_greeting)
+            logger.debug("skipping greeting TODO: fix this")
+            #logger.debug(f"[MortyBot] Sending greeting to {server.GUILD_NAME} ({server.GUILD_ID})")
+            #await core_channel.send(random_greeting)
         else:
             logger.warning(f"[MortyBot] Server {server.GUILD_ID} ({server.GUILD_NAME}) is not configured!")
             
