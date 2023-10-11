@@ -48,101 +48,74 @@ async def getGuildStockpiles(sql, guild):
     return [Stockpile(guild, *row) for row in rows]
 
 
+
+# Import necessary libraries
+import discord
+from typing import List
+from collections import defaultdict
+import modules.utils as utils
+from modules.MortyUI import StockpileEditButtons
+
+#setup logging
+import logging
+logger = logging.getLogger("mortybot")
+
+# Define function to generate stockpile embeds
 async def makeStockpileEmbeds(stockpiles: List[Stockpile], interaction: discord.Interaction):
+    # Send a message to indicate that the embeds are being generated
     await interaction.response.send_message("Generating embeds...", ephemeral=True)
 
-    
-
-    stockpiles_by_hex = defaultdict(list)
+    # Create a dictionary to map hexes to towns and stockpiles
+    hex_town_map = defaultdict(lambda: defaultdict(list))
     for pile in stockpiles:
-        stockpiles_by_hex[pile.hexid].append(pile)
+        hex_town_map[pile.hexid][pile.townname].append(pile)
 
-    for hex, piles in stockpiles_by_hex.items():
-        embed, edit_buttons = createHexEmbed(piles)
+    # Loop through each hex in the dictionary
+    for hex in hex_town_map.items():
+        # Set up variables for the loop
+        pileIndex = 0
+        linkedButtons = []
 
-        view = StockpileEditButtons(buttons=edit_buttons)
+        # Create a new embed
+        embed = discord.Embed()
+        embed.set_thumbnail(url="https://static.wikia.nocookie.net/foxhole_gamepedia_en/images/d/d7/Map_Endless_Shore.png/revision/latest/scale-to-width-down/1000?cb=20220924114234")
 
-        await interaction.channel.send(embed=embed,view=view)
-    
+        # Loop through each town in the hex
+        for town in hex[1]:
+            # Set the title of the embed to the hex name
+            embed.title = utils.padEmbed(f"Stockpiles in {hex[1][town][0].hexname}")
+
+            # Set up variables for the loop
+            locations = ""
+            codes = ""
+            expires = ""
+
+            # Loop through each stockpile in the town
+            for pile in hex[1][town]:
+                # Add the stockpile information to the embed
+                locations += f"L{pileIndex}: {pile.stockpilename}\n"
+                codes += f"{pile.code}\n"
+                expires += f"{utils.discordTimestamp(pile.expires)}\n"
+
+                # Create a linked button for the stockpile
+                new = utils.linkedStockpile(index=pileIndex, stockpile_id=pile.stockpileid, button_label=f"L{pileIndex}")
+                linkedButtons.append(new)
+                pileIndex += 1
+
+            # Add the stockpile information to the embed
+            embed.add_field(name=town, value=locations, inline=True)
+            embed.add_field(name="Code", value=codes, inline=True)
+            embed.add_field(name="Expires", value=expires, inline=True)
+
+        # Create a view with the linked buttons
+        view = StockpileEditButtons(buttons=linkedButtons)
+
+        # Send the embed with the view
+        await interaction.channel.send(embed=embed, view=view)
+
+    # Return a message indicating that the embeds have been sent
     return "Embeds sent!"
 
-
-
-def createHexEmbed(piles: List[Stockpile]) -> discord.Embed:
-    first_pile = piles[0]
-    embed = discord.Embed(title=utils.padEmbed(f"Stockpiles in {first_pile.hexname}"))  # Added padding back
-    
-    #Button objects
-    linked_buttons = []
-    
-    #Button index
-    
-
-    index = 0
-    towns = set(pile.townname for pile in piles)
-    linked_buttons.clear()
-    
-    # pileIndex=0
-    # for town in towns:
-    #     for pile in piles:
-    #         new = utils.linkedStockpile(index=pileIndex, stockpile_id=pile.stockpileid, button_label=label)
-    #         linked_buttons.append(new)
-    #         pileIndex += 1
-    
-    pileIndex = 0
-    for town in towns:
-        town_piles = []
-        button_index = []
-        
-        for pile in piles:
-            
-            if pile.townname == town:
-                label=f"L{pileIndex}"
-                new = utils.linkedStockpile(index=index, stockpile_id=pile.stockpileid, button_label=label)
-                linked_buttons.append(new)
-                button_index.append(index)
-                index += 1
-                town_piles.append(pile)
-                pileIndex += 1
-        
-        addTownToEmbed(town_piles, embed, button_index, linked_buttons)
-
-    embed.set_thumbnail(url="https://static.wikia.nocookie.net/foxhole_gamepedia_en/images/d/d7/Map_Endless_Shore.png/revision/latest/scale-to-width-down/1000?cb=20220924114234")
-    
-    
-    return embed, linked_buttons
-
-
-
-def addTownToEmbed(town_piles: List[Stockpile], embed: discord.Embed, button_index: list, linked_buttons: List[utils.linkedStockpile]):
-    edit_buttons = []
-    
-    town_name = town_piles[0].townname
-    
-    #for each location add an entry to edit_buttons array
-    for index,(pile) in enumerate(town_piles):
-        #edit_buttons.append(index)
-        pass
-    
-    locations = []
-    for index, pile in enumerate(town_piles):
-        # Append the index and stockpile name to the locations list
-        location_with_index = f"{linked_buttons[index].button_label}: {pile.stockpilename}"
-        locations.append(location_with_index)
-        edit_buttons.append(linked_buttons[index])
-        button_index.pop(0)
-
-    locations = '\n'.join(locations)
-    
-    #locations = '\n'.join(pile.stockpilename for pile in town_piles)
-    codes = '\n'.join(str(pile.code) for pile in town_piles)
-    expires = '\n'.join(utils.discordTimestamp(pile.expires) for pile in town_piles)
-
-    embed.add_field(name=town_name, value=locations, inline=True)
-    embed.add_field(name="Code", value=codes, inline=True)
-    embed.add_field(name="Expires", value=expires, inline=True)
-
-    return edit_buttons
 
 async def addGuildStockpile(sql, guild, stockpile: Stockpile):
 
