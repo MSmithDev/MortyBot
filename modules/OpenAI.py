@@ -135,17 +135,13 @@ def getMessageList() -> list:
 
 
 async def sendGPTPrompt(input: str, user: discord.User, persona: Persona.Persona, interaction: discord.Interaction) -> str:
+ 
+    #todo seperate messages for each persona
+    #use a dict with persona as key and list of messages as value
+    messages = persona.messages()
+    messages.append({"role": "user", "name": user.name, "content": input})
+    logger.debug(f"[OpenAI] Messages: {messages}")
 
-
-    
-    if len(messagesGPT) > 10:
-        messagesGPT.pop(0)
-
-    messagesGPT.append(persona)
-
-    messagesGPT.append({"role": "user", "name": user.name, "content": input})
-
-    logger.debug(f"[OpenAI] Messages: {messagesGPT}")
 
     max_retries = 3
     retry_delay = 5
@@ -154,14 +150,14 @@ async def sendGPTPrompt(input: str, user: discord.User, persona: Persona.Persona
                 try:
                     response = openai.ChatCompletion.create(
                         model="gpt-3.5-turbo-0613",
-                        messages=messagesGPT,
+                        messages=messages,
                         functions=GPTFunctions.functions,
                         max_tokens=200,
                         temperature=0.9, #randomness of response 0-2 higher = more random
                     )
                     response_message = response.choices[0].message
                     logger.debug(f"[OpenAI] Response: {response_message}")
-                    messagesGPT.append(response_message)
+                    persona.add_message(response_message)
                     
 
                     

@@ -49,7 +49,13 @@ class Persona(Enum):
         """
     }
 
-    
+    def messages(self):
+        if not hasattr(self, '_messages'):
+            self._messages = [self.value]  # Initialize with the system message
+        return self._messages
 
-    def role(self):
-        return self.value
+    def add_message(self, message):
+        messages = self.messages()
+        if len(messages) >= 11:  # Adjust this value as per your requirement
+            messages.pop(1)  # Remove the oldest message but keep the system message
+        messages.append(message)
