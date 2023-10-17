@@ -161,7 +161,7 @@ async def voice_cmd(interaction: discord.Interaction):
 @option(name="inspire", type=str, required=False, description="Use this as inspiration")
 async def setup(interaction: discord.Interaction, inspire=None):
     """Debug a prompt"""
-
+    await interaction.response.defer()
     if inspire is None:
         inspire = "Make one quote"
 
@@ -169,8 +169,7 @@ async def setup(interaction: discord.Interaction, inspire=None):
         inspire = f"Make one quote using this as inspiration: '{inspire}'"
     response = await sendGPTPrompt(input=inspire,user=interaction.user,interaction=interaction, persona=Persona.Persona.Razz.value)
 
-    await interaction.response.send_message(response,ephemeral=False)
-
+    await interaction.followup.send(response,ephemeral=True)
 
 @MortyBot.slash_command(name="teststockpile", description="Test Stockpile")
 async def stockpile(interaction: discord.Interaction):
