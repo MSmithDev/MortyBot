@@ -245,7 +245,7 @@ class VoiceResponseUI(discord.ui.View):
 
                 await channel.send(f"{self.voiceTarget.name} said: {text}")
 
-                await OpenAI.sendGPTMessage(persona=Persona.Persona.Chat.value, input=text, user=self.voiceTarget.name, textChannel=channel, voiceClient=self.voiceClient)
+                await OpenAI.sendGPTMessage(persona=Persona.Persona.Chat, input=text, user=self.voiceTarget.name, textChannel=channel, voiceClient=self.voiceClient)
 
             
             

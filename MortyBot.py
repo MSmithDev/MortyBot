@@ -118,7 +118,7 @@ async def on_ready():
 @option(name="Prompt", type=str, required=True)
 async def setup(interaction: discord.Interaction, input: str):
     """Debug a prompt"""
-    response = await sendGPTPrompt(input=input,user=interaction.user,interaction=interaction, persona=Persona.Persona.Chat.value)
+    response = await sendGPTPrompt(input=input,user=interaction.user,interaction=interaction, persona=Persona.Persona.Chat)
 
     await interaction.response.send_message(f"Prompt: {input}\n\n{response}",ephemeral=False)
 
@@ -167,7 +167,7 @@ async def setup(interaction: discord.Interaction, inspire=None):
 
     else:
         inspire = f"Make one quote using this as inspiration: '{inspire}'"
-    response = await sendGPTPrompt(input=inspire,user=interaction.user,interaction=interaction, persona=Persona.Persona.Razz.value)
+    response = await sendGPTPrompt(input=inspire,user=interaction.user,interaction=interaction, persona=Persona.Persona.Razz)
 
     await interaction.followup.send(response,ephemeral=True)
 
@@ -225,7 +225,7 @@ async def on_message(message: discord.Message):
                     async with message.channel.typing():
                         
                         #reply to message
-                        await message.reply(await sendGPTMessage(input=message.content,user=message.author.name, persona=Persona.Persona.Chat.value, voiceClient=message.guild.voice_client))
+                        await message.reply(await sendGPTMessage(input=message.content,user=message.author.name, persona=Persona.Persona.Chat, voiceClient=message.guild.voice_client))
 
 
 MortyBot.run(discord_token)
