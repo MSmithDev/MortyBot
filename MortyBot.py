@@ -225,7 +225,7 @@ async def on_message(message: discord.Message):
                     async with message.channel.typing():
                         
                         #reply to message
-                        await message.reply(await sendGPTMessage(input=message.content,user=message.author.name, persona=Persona.Persona.Chat, voiceClient=message.guild.voice_client))
+                        await message.reply(await sendGPTMessage(input=message.content,user=message.author.name, persona=Persona.Persona.Chat.value, voiceClient=message.guild.voice_client))
 
 
 MortyBot.run(discord_token)

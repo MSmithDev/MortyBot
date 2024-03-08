@@ -1,0 +1,7 @@
+py-cord[voice]
+aiosqlite
+openai==0.28
+tiktoken
+elevenlabslib
+pyaudio
+termcolor

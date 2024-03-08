@@ -12,8 +12,9 @@ def VoiceSetup(key: str) -> bool:
     e11Voices = {
         "DuckyJr":e11Voice.get_voices_by_name("DuckyJR2")[0], 
         "Cortana":e11Voice.get_voices_by_name("Cortana")[0],
+        "Matt":e11Voice.get_voices_by_name("Matt")[0],
         }
-    e11Voice = e11Voices["DuckyJr"] # set default voice
+    e11Voice = e11Voices["Matt"] # set default voice
 
     return True
 

@@ -123,8 +123,9 @@ async def whisperProcess(file: str) -> str:
 
 
 e11key = os.getenv('ELEVENLABS_API_KEY')
+print("Got key: " + e11key)
 user = ElevenLabsUser(e11key)
-MortyVoice = user.get_voices_by_name("Morty")[0]
+MortyVoice = user.get_voices_by_name("Matt")[0]
 currentVoice = MortyVoice
 messagesGPT = []
 
@@ -243,10 +244,11 @@ async def sendGPTMessage(input: str, user: str,persona: Persona.Persona, voiceCl
                     ## If in voice channel speak instead of type
                     if voiceClient is not None:
                         if voiceClient.is_connected():
-                            voicedata = currentVoice.generate_audio_bytes(chat_response)
-                            save_audio_bytes(voicedata, "speech.mp3", outputFormat="mp3")
+                            voicedata = currentVoice.generate_audio_v2(chat_response)
+                            
+                            save_audio_v2(voicedata[0], "speech.mp3", outputFormat="mp3")
 
-                            voiceClient.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source="speech.mp3"))
+                            voiceClient.play(discord.FFmpegPCMAudio(source="speech.mp3"))
                     else:
                         return chat_response
                     break
